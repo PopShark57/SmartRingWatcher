@@ -60,3 +60,10 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Local builds
+DerivedData/
+.swiftpm/
+Package.resolved
+*.xcodeproj/project.xcworkspace/xcuserdata/
+.DS_Store
