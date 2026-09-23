@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKWatchOnly</key>
+	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>SmartRing connects to your smart ring over Bluetooth to read heart rate, sleep, steps, blood pressure, blood oxygen and other health data.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+</dict>
+</plist>
