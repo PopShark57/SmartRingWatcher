@@ -6,8 +6,10 @@ enum MeasurementOutcome: String, Codable {
 
 /// Everything the protocol layer can tell the app about.
 enum RingEvent: Equatable {
-    /// New live values (only the fields the ring reported are set).
-    case live(LiveSnapshot)
+    /// New live values (only the fields the ring reported are set). `pushed` is true for
+    /// real-time uploads the ring streams by itself, false for replies to polls, which may
+    /// repeat an older measurement.
+    case live(LiveSnapshot, pushed: Bool)
     /// Timestamped samples decoded from history or measurement results.
     case samples(HealthBatch)
     case deviceInfo(DeviceInfo)
@@ -117,23 +119,23 @@ final class YCProtocolSession {
                 out.events.append(.deviceInfo(info))
                 var patch = LiveSnapshot()
                 patch.batteryPercent = info.batteryPercent
-                out.events.append(.live(patch))
+                out.events.append(.live(patch, pushed: false))
             }
         case .getAllRealData:
-            if let s = YCParsers.allRealData(p, now: now) { out.events.append(.live(s)) }
+            if let s = YCParsers.allRealData(p, now: now) { out.events.append(.live(s, pushed: false)) }
         case .getNowStep:
-            if let s = YCParsers.nowStep(p, now: now) { out.events.append(.live(s)) }
+            if let s = YCParsers.nowStep(p, now: now) { out.events.append(.live(s, pushed: false)) }
         case .getRealTemp:
             if p.count >= 2, p[0] > 0, let t = Plausible.temperature(vendorDecimal(integer: p.u8(0), fraction: p.u8(1))) {
                 var s = LiveSnapshot(updatedAt: now)
                 s.temperature = t
-                out.events.append(.live(s))
+                out.events.append(.live(s, pushed: false))
             }
         case .getRealBloodOxygen:
             if p.count >= 2, let spo2 = Plausible.bloodOxygen(p.u8(1)) {
                 var s = LiveSnapshot(updatedAt: now)
                 s.bloodOxygen = spo2
-                out.events.append(.live(s))
+                out.events.append(.live(s, pushed: false))
             }
         default:
             break
@@ -249,35 +251,35 @@ final class YCProtocolSession {
     private func handleRealTime(_ type: YCDataType, _ p: [UInt8], now: Date, into out: inout Output) {
         switch type {
         case .realSport:
-            if let s = YCParsers.realSport(p, now: now) { out.events.append(.live(s)) }
+            if let s = YCParsers.realSport(p, now: now) { out.events.append(.live(s, pushed: true)) }
         case .realHeart:
             if let bpm = p.first.flatMap({ Plausible.heartRate(Int($0)) }) {
                 var s = LiveSnapshot(updatedAt: now)
                 s.heartRate = bpm
-                out.events.append(.live(s))
+                out.events.append(.live(s, pushed: true))
             }
         case .realBloodOxygen:
             if let spo2 = p.first.flatMap({ Plausible.bloodOxygen(Int($0)) }) {
                 var s = LiveSnapshot(updatedAt: now)
                 s.bloodOxygen = spo2
-                out.events.append(.live(s))
+                out.events.append(.live(s, pushed: true))
             }
         case .realBlood:
-            if let s = YCParsers.realBlood(p, now: now) { out.events.append(.live(s)) }
+            if let s = YCParsers.realBlood(p, now: now) { out.events.append(.live(s, pushed: true)) }
         case .realRespiratoryRate:
             if let r = p.first.flatMap({ Plausible.respiration(Int($0)) }) {
                 var s = LiveSnapshot(updatedAt: now)
                 s.respiratoryRate = r
-                out.events.append(.live(s))
+                out.events.append(.live(s, pushed: true))
             }
         case .realComprehensive:
-            if let s = YCParsers.realComprehensive(p, now: now) { out.events.append(.live(s)) }
+            if let s = YCParsers.realComprehensive(p, now: now) { out.events.append(.live(s, pushed: true)) }
         case .realBodyData:
             if let body = YCParsers.bodyMetrics(p, date: now) {
                 var s = LiveSnapshot(updatedAt: now)
                 s.hrv = body.hrv
                 s.stress = body.stress
-                out.events.append(.live(s))
+                out.events.append(.live(s, pushed: true))
                 var batch = HealthBatch()
                 batch.bodyMetrics.append(body)
                 out.events.append(.samples(batch))
@@ -286,7 +288,7 @@ final class YCProtocolSession {
             if p.count >= 5 {
                 var s = LiveSnapshot(updatedAt: now)
                 s.isWorn = p[4] != 0
-                out.events.append(.live(s))
+                out.events.append(.live(s, pushed: true))
             }
         default:
             break

@@ -25,7 +25,8 @@ enum DemoDataGenerator {
                 let dia = Int(76 + circadian * 0.3 + rng.gaussian() * 3)
                 batch.bloodPressure.append(BloodPressureSample(date: t, systolic: sys, diastolic: dia, heartRate: bpm))
                 batch.bloodOxygen.append(BloodOxygenSample(date: t, percent: min(100, Int(97.5 + rng.gaussian()))))
-                batch.temperature.append(TemperatureSample(date: t, celsius: ((36.4 + (asleep ? -0.3 : 0.1) + rng.gaussian() * 0.1) * 10).rounded() / 10))
+                let celsius: Double = 36.4 + (asleep ? -0.3 : 0.1) + rng.gaussian() * 0.1
+                batch.temperature.append(TemperatureSample(date: t, celsius: (celsius * 10).rounded() / 10))
                 batch.respiration.append(RespirationSample(date: t, breathsPerMinute: Int(15 + (asleep ? -2 : 1) + rng.gaussian())))
                 let hrvValue = max(15, 48 + (asleep ? 14 : -6) + rng.gaussian() * 6)
                 batch.hrv.append(HRVSample(date: t, milliseconds: hrvValue.rounded()))

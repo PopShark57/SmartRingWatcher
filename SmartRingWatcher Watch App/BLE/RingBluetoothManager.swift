@@ -166,7 +166,11 @@ final class RingBluetoothManager: NSObject, ObservableObject {
         if let peripheral {
             central.cancelPeripheralConnection(peripheral)
         }
-        if forget { state = .idle }
+        if forget {
+            // The disconnect callback will no longer see a ready connection, so notify now.
+            if state == .ready { delegate?.transportDidDisconnect(self) }
+            state = .idle
+        }
     }
 
     private func connect(_ target: CBPeripheral, name: String) {
@@ -252,6 +256,11 @@ final class RingBluetoothManager: NSObject, ObservableObject {
 
 extension RingBluetoothManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        // Connections are dropped when Bluetooth goes away, without a disconnect callback.
+        if central.state != .poweredOn, state == .ready {
+            resetConnectionState()
+            delegate?.transportDidDisconnect(self)
+        }
         switch central.state {
         case .poweredOn:
             if state != .ready { state = .idle }

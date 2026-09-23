@@ -71,7 +71,7 @@ final class SessionTests: XCTestCase {
         let session = makeSession()
         var hr = LiveSnapshot(updatedAt: baseDate)
         hr.heartRate = 68
-        XCTAssertEqual(session.receive(YCFrame(.realHeart, [68]).data).events, [.live(hr)])
+        XCTAssertEqual(session.receive(YCFrame(.realHeart, [68]).data).events, [.live(hr, pushed: true)])
 
         let out = session.receive(YCFrame(.getDeviceInfo, hex("3412 05 01 01 32 01 00")).data)
         XCTAssertEqual(out.events.first, .deviceInfo(DeviceInfo(deviceID: 0x1234, firmwareVersion: "1.05",

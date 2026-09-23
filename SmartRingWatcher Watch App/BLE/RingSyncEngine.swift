@@ -143,6 +143,11 @@ final class RingSyncEngine: ObservableObject {
     /// Background App Refresh: watchOS allows ~15 s, so do the essentials and report back.
     func performBackgroundSync(completion: @escaping () -> Void) {
         guard !settings.demoMode else { completion(); return }
+        // Only one refresh task is honoured at a time; finish any earlier one first.
+        if let pending = backgroundCompletion {
+            backgroundCompletion = nil
+            pending()
+        }
         backgroundCompletion = completion
         backgroundDeadline?.invalidate()
         backgroundDeadline = Timer.scheduledTimer(withTimeInterval: 12, repeats: false) { [weak self] _ in
@@ -294,9 +299,9 @@ final class RingSyncEngine: ObservableObject {
         }
         for event in output.events {
             switch event {
-            case .live(let patch):
+            case .live(let patch, let pushed):
                 store.applyLive(patch)
-                recordStreamedSamples(patch)
+                if pushed { recordStreamedSamples(patch) }
             case .samples(let batch):
                 store.apply(batch)
             case .deviceInfo(let info):
@@ -339,9 +344,9 @@ final class RingSyncEngine: ObservableObject {
         enqueue(YCCommand.allRealData)
     }
 
-    /// Values streamed during a measurement or live streaming are real readings; keep one
-    /// per 30 s so charts show them without flooding the store. Polled snapshots are not
-    /// recorded (they may repeat an old measurement).
+    /// Values the ring streams during a measurement or live streaming are real readings; keep
+    /// one per 30 s so charts show them without flooding the store. Polled snapshots never get
+    /// here (they may repeat an old measurement).
     private func recordStreamedSamples(_ patch: LiveSnapshot) {
         guard activeMeasurement != nil || settings.liveStreaming, let at = patch.updatedAt else { return }
         var batch = HealthBatch()

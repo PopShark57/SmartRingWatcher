@@ -6,6 +6,24 @@ struct Reading<Value> {
     var date: Date
 }
 
+/// Live values that carry their own "last reported" time.
+enum LiveField: String, Codable, CaseIterable {
+    case heartRate, bloodPressure, bloodOxygen, temperature, respiration, hrv, stress, activity
+
+    func isPresent(in patch: LiveSnapshot) -> Bool {
+        switch self {
+        case .heartRate: return patch.heartRate != nil
+        case .bloodPressure: return patch.systolic != nil && patch.diastolic != nil
+        case .bloodOxygen: return patch.bloodOxygen != nil
+        case .temperature: return patch.temperature != nil
+        case .respiration: return patch.respiratoryRate != nil
+        case .hrv: return patch.hrv != nil
+        case .stress: return patch.stress != nil
+        case .activity: return patch.stepsToday != nil
+        }
+    }
+}
+
 /// Everything the UI shows. Samples from the ring are merged, de-duplicated by timestamp,
 /// trimmed to `retentionDays`, and persisted as JSON so the app opens with the last data
 /// even before the ring reconnects.
@@ -22,8 +40,11 @@ final class HealthDataStore: ObservableObject {
     @Published private(set) var activity: [ActivitySample] = []
     @Published private(set) var sleep: [SleepSession] = []
     @Published private(set) var metabolic: [MetabolicSample] = []
-    /// When any value last changed (drives the "Updated … ago" labels).
+    /// When any value last changed.
     @Published private(set) var lastChange: Date?
+    /// When the ring last reported each live value. A patch usually carries only some
+    /// fields, so one snapshot-wide timestamp would make old values look fresh.
+    @Published private(set) var liveDates: [LiveField: Date] = [:]
 
     let retentionDays = 14
 
@@ -58,10 +79,16 @@ final class HealthDataStore: ObservableObject {
     }
 
     func applyLive(_ patch: LiveSnapshot) {
+        let at = patch.updatedAt ?? Date()
+        var dates = liveDates
+        for field in LiveField.allCases where field.isPresent(in: patch) {
+            dates[field] = at
+        }
         var updated = live
         updated.apply(patch)
-        guard updated != live else { return }
+        guard updated != live || dates != liveDates else { return }
         live = updated
+        liveDates = dates
         lastChange = Date()
         scheduleSave()
     }
@@ -74,6 +101,7 @@ final class HealthDataStore: ObservableObject {
 
     func eraseAll() {
         live = LiveSnapshot()
+        liveDates = [:]
         deviceInfo = nil
         heartRate = []
         bloodPressure = []
@@ -92,8 +120,8 @@ final class HealthDataStore: ObservableObject {
     /// Replaces everything at once (used by demo mode).
     func replaceAll(with batch: HealthBatch, live snapshot: LiveSnapshot, device: DeviceInfo?) {
         eraseAll()
-        live = snapshot
         deviceInfo = device
+        applyLive(snapshot)
         apply(batch)
     }
 
@@ -127,37 +155,37 @@ final class HealthDataStore: ObservableObject {
     }
 
     var latestHeartRate: Reading<Int>? {
-        latest(live: live.heartRate, history: heartRate.last.map { Reading(value: $0.bpm, date: $0.date) })
+        latest(.heartRate, live: live.heartRate, history: heartRate.last.map { Reading(value: $0.bpm, date: $0.date) })
     }
 
     var latestBloodPressure: Reading<BloodPressureSample>? {
         let history = bloodPressure.last.map { Reading(value: $0, date: $0.date) }
         var fromLive: BloodPressureSample?
-        if let sys = live.systolic, let dia = live.diastolic, let at = live.updatedAt {
-            fromLive = BloodPressureSample(date: at, systolic: sys, diastolic: dia, heartRate: live.heartRate)
+        if let sys = live.systolic, let dia = live.diastolic, let at = liveDates[.bloodPressure] {
+            fromLive = BloodPressureSample(date: at, systolic: sys, diastolic: dia, heartRate: nil)
         }
-        return latest(live: fromLive, history: history)
+        return latest(.bloodPressure, live: fromLive, history: history)
     }
 
     var latestBloodOxygen: Reading<Int>? {
-        latest(live: live.bloodOxygen, history: bloodOxygen.last.map { Reading(value: $0.percent, date: $0.date) })
+        latest(.bloodOxygen, live: live.bloodOxygen, history: bloodOxygen.last.map { Reading(value: $0.percent, date: $0.date) })
     }
 
     var latestTemperature: Reading<Double>? {
-        latest(live: live.temperature, history: temperature.last.map { Reading(value: $0.celsius, date: $0.date) })
+        latest(.temperature, live: live.temperature, history: temperature.last.map { Reading(value: $0.celsius, date: $0.date) })
     }
 
     var latestRespiration: Reading<Int>? {
-        latest(live: live.respiratoryRate, history: respiration.last.map { Reading(value: $0.breathsPerMinute, date: $0.date) })
+        latest(.respiration, live: live.respiratoryRate, history: respiration.last.map { Reading(value: $0.breathsPerMinute, date: $0.date) })
     }
 
     var latestHRV: Reading<Double>? {
-        latest(live: live.hrv, history: hrv.last.map { Reading(value: $0.milliseconds, date: $0.date) })
+        latest(.hrv, live: live.hrv, history: hrv.last.map { Reading(value: $0.milliseconds, date: $0.date) })
     }
 
     var latestStress: Reading<Double>? {
         let history = bodyMetrics.last(where: { $0.stress != nil })
-        return latest(live: live.stress, history: history.flatMap { sample in
+        return latest(.stress, live: live.stress, history: history.flatMap { sample in
             sample.stress.map { Reading(value: $0, date: sample.date) }
         })
     }
@@ -165,9 +193,9 @@ final class HealthDataStore: ObservableObject {
     var latestBodyMetrics: BodyMetricsSample? { bodyMetrics.last }
     var latestMetabolic: MetabolicSample? { metabolic.last }
 
-    /// The live value when it is at least as new as the newest stored sample.
-    private func latest<V>(live value: V?, history: Reading<V>?) -> Reading<V>? {
-        if let value, let at = live.updatedAt, history.map({ at >= $0.date }) ?? true {
+    /// The live value when the ring reported it at least as recently as the newest stored sample.
+    private func latest<V>(_ field: LiveField, live value: V?, history: Reading<V>?) -> Reading<V>? {
+        if let value, let at = liveDates[field], history.map({ at >= $0.date }) ?? true {
             return Reading(value: value, date: at)
         }
         return history
@@ -189,7 +217,7 @@ final class HealthDataStore: ObservableObject {
     }
 
     private var liveIsFromToday: Bool {
-        guard let at = live.updatedAt else { return false }
+        guard let at = liveDates[.activity] else { return false }
         return at >= todayStart
     }
 
@@ -250,6 +278,7 @@ final class HealthDataStore: ObservableObject {
         var sleep: [SleepSession]
         var metabolic: [MetabolicSample]
         var lastChange: Date?
+        var liveDates: [LiveField: Date]?
     }
 
     private func scheduleSave() {
@@ -266,7 +295,7 @@ final class HealthDataStore: ObservableObject {
             live: live, deviceInfo: deviceInfo, heartRate: heartRate, bloodPressure: bloodPressure,
             bloodOxygen: bloodOxygen, temperature: temperature, hrv: hrv, respiration: respiration,
             bodyMetrics: bodyMetrics, activity: activity, sleep: sleep, metabolic: metabolic,
-            lastChange: lastChange)
+            lastChange: lastChange, liveDates: liveDates)
         do {
             let data = try JSONEncoder().encode(snapshot)
             try data.write(to: fileURL, options: .atomic)
@@ -291,5 +320,6 @@ final class HealthDataStore: ObservableObject {
         sleep = snapshot.sleep
         metabolic = snapshot.metabolic
         lastChange = snapshot.lastChange
+        liveDates = snapshot.liveDates ?? [:]
     }
 }
