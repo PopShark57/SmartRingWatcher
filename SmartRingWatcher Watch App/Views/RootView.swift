@@ -62,9 +62,10 @@ struct RootView: View {
                     }
                     NavigationLink { StressView() } label: {
                         MetricTile(style: .stress,
-                                   value: store.latestStress?.value.noDecimals ?? "--",
-                                   unit: store.latestStress.map { StressView.level(for: $0.value) } ?? "",
-                                   date: store.latestStress?.date)
+                                   value: store.latestStress?.value.oneDecimal ?? "--",
+                                   unit: "/ 10",
+                                   date: store.latestStress?.date,
+                                   detail: store.latestStress.map { StressView.level(for: $0.value) })
                     }
                     NavigationLink { RespirationView() } label: {
                         MetricTile(style: .respiration,

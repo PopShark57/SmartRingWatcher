@@ -277,7 +277,7 @@ final class YCProtocolSession {
         case .realBodyData:
             if let body = YCParsers.bodyMetrics(p, date: now) {
                 var s = LiveSnapshot(updatedAt: now)
-                s.hrv = body.hrv
+                s.hrv = body.hrvMilliseconds.flatMap(Plausible.hrv)
                 s.stress = body.stress
                 out.events.append(.live(s, pushed: true))
                 var batch = HealthBatch()

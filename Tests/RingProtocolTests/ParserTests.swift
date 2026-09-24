@@ -69,11 +69,11 @@ final class ParserTests: XCTestCase {
     func testBodyHistory() throws {
         let batch = YCParsers.bodyHistory(Vectors.body, timeZone: utc)
         let body = try XCTUnwrap(batch.bodyMetrics.first)
-        XCTAssertEqual(body.fatigue ?? 0, 30.5, accuracy: 0.0001)
-        XCTAssertEqual(body.hrv ?? 0, 42, accuracy: 0.0001)
-        XCTAssertEqual(body.stress ?? 0, 55.2, accuracy: 0.0001)
-        XCTAssertEqual(body.bodyEnergy ?? 0, 70, accuracy: 0.0001)
-        XCTAssertEqual(body.sympathetic ?? 0, 40.1, accuracy: 0.0001)
+        XCTAssertEqual(body.fatigue ?? 0, 3.5, accuracy: 0.0001)
+        XCTAssertEqual(body.hrvIndex ?? 0, 4.2, accuracy: 0.0001)
+        XCTAssertEqual(body.stress ?? 0, 5.5, accuracy: 0.0001)
+        XCTAssertEqual(body.bodyIndex ?? 0, 6.0, accuracy: 0.0001)
+        XCTAssertEqual(body.sympatheticBalance ?? 0, 1.3, accuracy: 0.0001)
         XCTAssertEqual(body.sdnn, 50)
         XCTAssertEqual(body.vo2max, 38)
         XCTAssertEqual(body.pnn50, 12)
@@ -81,7 +81,30 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(body.lf, 500)
         XCTAssertEqual(body.hf, 400)
         XCTAssertEqual(body.lfHfRatio ?? 0, 1.2, accuracy: 0.0001)
-        XCTAssertEqual(batch.hrv, [HRVSample(date: baseDate, milliseconds: 42)])
+        // The HRV series gets RMSSD in ms, never the 0–10 HRV index.
+        XCTAssertEqual(batch.hrv, [HRVSample(date: baseDate, milliseconds: 35)])
+    }
+
+    func testBodyIndicesRejectOutOfRangeAndReadNegativeBalance() throws {
+        // Stress 55.2 is not a valid 0–10 index; balance byte 0xFE is −2 (so −2.5).
+        var bytes = Array(Vectors.body[4...])
+        bytes[4] = 0x37
+        bytes[5] = 0x02
+        bytes[8] = 0xFE
+        bytes[9] = 0x05
+        let body = try XCTUnwrap(YCParsers.bodyMetrics(bytes, date: baseDate))
+        XCTAssertNil(body.stress)
+        XCTAssertEqual(body.sympatheticBalance ?? 0, -2.5, accuracy: 0.0001)
+    }
+
+    func testLiveBodyDataReportsHRVInMilliseconds() {
+        let session = YCProtocolSession(timeZone: utc, clock: { baseDate })
+        let events = session.receive(YCFrame(.realBodyData, Array(Vectors.body[4...])).data).events
+        guard case .live(let snapshot, pushed: true)? = events.first else {
+            return XCTFail("expected a pushed live event, got \(events)")
+        }
+        XCTAssertEqual(snapshot.hrv, 35)
+        XCTAssertEqual(snapshot.stress ?? 0, 5.5, accuracy: 0.0001)
     }
 
     func testComprehensiveHistory() throws {

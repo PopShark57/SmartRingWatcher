@@ -28,13 +28,17 @@ enum DemoDataGenerator {
                 let celsius: Double = 36.4 + (asleep ? -0.3 : 0.1) + rng.gaussian() * 0.1
                 batch.temperature.append(TemperatureSample(date: t, celsius: (celsius * 10).rounded() / 10))
                 batch.respiration.append(RespirationSample(date: t, breathsPerMinute: Int(15 + (asleep ? -2 : 1) + rng.gaussian())))
-                let hrvValue = max(15, 48 + (asleep ? 14 : -6) + rng.gaussian() * 6)
+                let hrvValue: Double = max(15, 48 + (asleep ? 14 : -6) + rng.gaussian() * 6)
                 batch.hrv.append(HRVSample(date: t, milliseconds: hrvValue.rounded()))
-                let stress = min(95, max(5, (asleep ? 18 : 38) + rng.gaussian() * 10))
+                // Same direction as the ring: lower HRV → higher HRV index → higher stress.
+                let hrvIndex = vendorHRVIndex(hrvValue)
+                let stress: Double = min(9.8, max(0.2, hrvIndex * 0.8 + rng.gaussian() * 0.5))
+                let fatigue: Double = min(9.8, max(0.2, 2.5 + hour / 12 + rng.gaussian() * 0.6))
+                let balance: Double = (asleep ? -1.5 : 1.0) + rng.gaussian() * 0.8
                 batch.bodyMetrics.append(BodyMetricsSample(
-                    date: t, stress: stress.rounded(), fatigue: (30 + rng.gaussian() * 8).rounded(),
-                    bodyEnergy: max(10, min(100, 80 - hour * 2.2 + rng.gaussian() * 5)).rounded(),
-                    sympathetic: (40 + rng.gaussian() * 6).rounded(), hrv: hrvValue.rounded(),
+                    date: t, stress: roundedToTenth(stress), fatigue: roundedToTenth(fatigue),
+                    bodyIndex: roundedToTenth(min(9.8, max(1.7, hrvIndex * 0.9))),
+                    sympatheticBalance: roundedToTenth(balance), hrvIndex: roundedToTenth(hrvIndex),
                     sdnn: Int(hrvValue * 1.2), rmssd: Int(hrvValue), pnn50: 14, lf: 520, hf: 430,
                     lfHfRatio: 1.2, vo2max: 41))
                 if !asleep {
@@ -92,7 +96,7 @@ enum DemoDataGenerator {
         s.respiratoryRate = previous.respiratoryRate ?? 15
         s.temperature = previous.temperature ?? 36.5
         s.hrv = previous.hrv ?? 46
-        s.stress = previous.stress ?? 32
+        s.stress = previous.stress ?? roundedToTenth(vendorHRVIndex(46) * 0.8)
         let steps = (previous.stepsToday ?? 3200) + Int(abs(rng.gaussian()) * 12)
         s.stepsToday = steps
         s.distanceTodayMeters = Int(Double(steps) * 0.72)
@@ -100,6 +104,26 @@ enum DemoDataGenerator {
         s.batteryPercent = previous.batteryPercent ?? 76
         return s
     }
+}
+
+/// The vendor SDK's HRV-norm mapping (`AIPraseDataUtil.calc_HRV_norm`): raw HRV in ms to a
+/// 0–10 index that rises as HRV falls. Used only to make demo data behave like a real ring.
+func vendorHRVIndex(_ milliseconds: Double) -> Double {
+    let f = max(milliseconds, 10)
+    switch f {
+    case ..<25: return f * -0.06 + 10.6
+    case ..<40: return f * -0.0333 + 9.9333
+    case ..<60: return f * -0.045 + 10.4
+    case ..<75: return f * -0.1267 + 15.3
+    case ..<90: return f * -0.12 + 14.8
+    case ..<130: return f * -0.05 + 8.5
+    case ..<150: return f * -0.055 + 9.15
+    default: return 0
+    }
+}
+
+private func roundedToTenth(_ value: Double) -> Double {
+    (value * 10).rounded() / 10
 }
 
 /// Small deterministic PRNG (SplitMix64) so demo data looks the same on every launch.

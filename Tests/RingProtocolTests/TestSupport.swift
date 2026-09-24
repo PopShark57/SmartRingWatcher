@@ -35,6 +35,8 @@ enum Vectors {
         AFFA 1C00 00000130 100E0130 0200 0300 1E00 3C00
         F1 00000130 080700
         """)
-    static let body = hex("00000030 1E05 2A00 3702 4600 2801 3200 26 0C 2300 F401 9001 0C 000000")
+    /// Fatigue 3.5, HRV index 4.2, stress 5.5, body 6.0, balance 1.3 (0–10 indices),
+    /// SDNN 50 ms, VO2max 38, pNN50 12, RMSSD 35 ms, LF 500, HF 400, LF/HF 1.2.
+    static let body = hex("00000030 0305 0402 0505 0600 0103 3200 26 0C 2300 F401 9001 0C 000000")
     static let comprehensive = hex("00000030 01 05 06 01 4001 01 00 03 01 0405 0102 0208 0105" + String(repeating: "00", count: 22))
 }

@@ -69,11 +69,18 @@ receives the full history.
 | `0x0603` blood | SBP, DBP, HR, [HRV], [SpO2], [tempInt, tempFrac] |
 | `0x0607` respiration | breaths/min |
 | `0x060A` comprehensive | steps u24, dist u16, kcal u16, HR, SBP, DBP, SpO2, resp, tempInt, tempFrac, wear, battery, PPI u32, … |
-| `0x0610` body data | fatigue, HRV, stress, body energy, sympathetic (each int+frac), SDNN u16, VO2max, pNN50, RMSSD u16, LF u16, HF u16, LF/HF×10 |
+| `0x0610` body data | fatigue, HRV index, stress, body index, sympathetic balance (each int+frac, 0–10 scale, see below), SDNN ms u16, VO2max, pNN50, RMSSD ms u16, LF u16, HF u16, LF/HF×10 |
 | `0x040E` measurement result | kind, result (1 ok, 2 fail, 3 cancel) |
 | `0x0413` measurement status | kind, state, values… |
 
 Decimals are sent as an integer byte and a fraction byte and rebuilt as the string `"int.frac"`, as the SDK does.
+
+**Body-data indices are scores, not measurements.** The five int/frac pairs are the vendor's "health norm"
+indices (SDK `HealthNormBean`: `heavyLoad`, `hrvNorm`, `pressure`, `body`, `sympatheticParasympathetic`).
+The SDK only accepts them in the 0–10 range (balance −10…10), and higher means more strain. The HRV index
+is *inverted*: the SDK's `calc_HRV_norm` maps 10 ms → 10 and 150 ms → ≈ 0.9, so it rises as HRV falls, in
+step with stress. Real HRV in milliseconds is the SDNN/RMSSD fields (and byte 11 of the `0x0509` record).
+The balance's integer byte is read as signed here; the SDK reads it unsigned.
 
 ## History transfer
 
@@ -96,7 +103,7 @@ Record timestamps are **local wall-clock seconds since 2000-01-01** (`raw + 9466
 | `0x051A` SpO2 | 6 B | time u32, type, % |
 | `0x051E` temperature | 7 B | time u32, type, int, frac |
 | `0x052F` blood chemistry | 44 B | time u32, glucose model/int/frac, uric model/u16, ketone model/int/frac, lipid model, TC, HDL, LDL, TG (int/frac pairs), padding |
-| `0x0533` body data | 28 B | time u32 + the `0x0610` layout |
+| `0x0533` body data | 28 B | time u32 + the `0x0610` layout (0–10 indices, see above) |
 
 ## Corrections to earlier community notes
 

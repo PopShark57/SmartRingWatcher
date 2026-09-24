@@ -241,8 +241,9 @@ enum YCParsers {
             let sample = bodyMetrics(Array(b[(i + 4)..<(i + 28)]), date: date)
             if let sample {
                 batch.bodyMetrics.append(sample)
-                if let hrv = sample.hrv {
-                    batch.hrv.append(HRVSample(date: date, milliseconds: hrv))
+                // The record's "HRV" field is an inverted 0–10 index; RMSSD/SDNN are the real HRV.
+                if let ms = sample.hrvMilliseconds.flatMap(Plausible.hrv) {
+                    batch.hrv.append(HRVSample(date: date, milliseconds: ms))
                 }
             }
             i += 28
@@ -250,21 +251,30 @@ enum YCParsers {
         return batch
     }
 
-    /// Body-data layout (no timestamp): fatigue int/frac, HRV int/frac, stress int/frac,
-    /// body energy int/frac, sympathetic int/frac, SDNN u16, then (≥ 21 bytes) VO2max u8,
-    /// pNN50 u8, RMSSD u16, LF u16, HF u16, LF/HF ×10 u8.
+    /// Body-data layout (no timestamp), each index as int/frac on the vendor's 0–10 scale:
+    /// fatigue, HRV index, stress, body index, sympathetic balance; then SDNN ms u16 and
+    /// (≥ 21 bytes) VO2max u8, pNN50 u8, RMSSD ms u16, LF u16, HF u16, LF/HF ×10 u8.
     static func bodyMetrics(_ b: [UInt8], date: Date) -> BodyMetricsSample? {
         guard b.count >= 12 else { return nil }
-        func pair(_ at: Int) -> Double? {
-            b.u8(at) == 0 && b.u8(at + 1) == 0 ? nil : vendorDecimal(integer: b.u8(at), fraction: b.u8(at + 1))
+        /// Integer byte + fraction byte; both zero means "not measured".
+        func index(_ at: Int) -> Double? {
+            guard b.u8(at) != 0 || b.u8(at + 1) != 0 else { return nil }
+            return Plausible.healthIndex(vendorDecimal(integer: b.u8(at), fraction: b.u8(at + 1)))
+        }
+        /// The balance can be negative, so its integer byte is read as two's complement.
+        func balance(_ at: Int) -> Double? {
+            guard b.u8(at) != 0 || b.u8(at + 1) != 0 else { return nil }
+            let whole = Int(Int8(bitPattern: b[at]))
+            let magnitude = vendorDecimal(integer: abs(whole), fraction: b.u8(at + 1))
+            return Plausible.balance(whole < 0 ? -magnitude : magnitude)
         }
         var sample = BodyMetricsSample(
             date: date,
-            stress: pair(4).flatMap(Plausible.percentScore),
-            fatigue: pair(0).flatMap(Plausible.percentScore),
-            bodyEnergy: pair(6).flatMap(Plausible.percentScore),
-            sympathetic: pair(8).flatMap(Plausible.percentScore),
-            hrv: pair(2).flatMap(Plausible.hrv),
+            stress: index(4),
+            fatigue: index(0),
+            bodyIndex: index(6),
+            sympatheticBalance: balance(8),
+            hrvIndex: index(2),
             sdnn: b.u16le(10) > 0 ? b.u16le(10) : nil)
         if b.count >= 21 {
             sample.vo2max = b.u8(12) > 0 ? b.u8(12) : nil
@@ -274,7 +284,8 @@ enum YCParsers {
             sample.hf = b.u16le(18) > 0 ? b.u16le(18) : nil
             sample.lfHfRatio = b.u8(20) > 0 ? Double(b.u8(20)) / 10 : nil
         }
-        let hasValue = sample.stress != nil || sample.fatigue != nil || sample.bodyEnergy != nil || sample.hrv != nil
+        let hasValue = sample.stress != nil || sample.fatigue != nil || sample.bodyIndex != nil
+            || sample.hrvIndex != nil || sample.hrvMilliseconds != nil
         return hasValue ? sample : nil
     }
 

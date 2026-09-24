@@ -264,7 +264,12 @@ final class HealthDataStore: ObservableObject {
 
     // MARK: - Persistence
 
+    /// Bump when the meaning of cached values changes.
+    /// 2: body-data HRV/stress are 0–10 indices (version 1 stored the HRV index as milliseconds).
+    private static let schemaVersion = 2
+
     private struct Snapshot: Codable {
+        var schemaVersion: Int?
         var live: LiveSnapshot
         var deviceInfo: DeviceInfo?
         var heartRate: [HeartRateSample]
@@ -292,7 +297,7 @@ final class HealthDataStore: ObservableObject {
         saveTimer?.invalidate()
         saveTimer = nil
         let snapshot = Snapshot(
-            live: live, deviceInfo: deviceInfo, heartRate: heartRate, bloodPressure: bloodPressure,
+            schemaVersion: Self.schemaVersion, live: live, deviceInfo: deviceInfo, heartRate: heartRate, bloodPressure: bloodPressure,
             bloodOxygen: bloodOxygen, temperature: temperature, hrv: hrv, respiration: respiration,
             bodyMetrics: bodyMetrics, activity: activity, sleep: sleep, metabolic: metabolic,
             lastChange: lastChange, liveDates: liveDates)
@@ -321,5 +326,16 @@ final class HealthDataStore: ObservableObject {
         metabolic = snapshot.metabolic
         lastChange = snapshot.lastChange
         liveDates = snapshot.liveDates ?? [:]
+        if (snapshot.schemaVersion ?? 1) < 2 {
+            // Version 1 mixed the ring's inverted HRV index into the HRV (ms) series and read
+            // stress on a 0–100 scale. Drop those values; the ring still holds its history and
+            // the next sync restores them with the right meaning.
+            hrv = []
+            bodyMetrics = []
+            live.hrv = nil
+            live.stress = nil
+            liveDates[.hrv] = nil
+            liveDates[.stress] = nil
+        }
     }
 }

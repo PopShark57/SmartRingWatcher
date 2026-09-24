@@ -13,13 +13,13 @@ services, so other generic rings show heart rate and battery too.
 | Metric | Where it comes from | On the watch |
 |---|---|---|
 | Heart rate | live snapshot, real-time upload, HR history, standard `0x2A37` | current, 24 h chart, min/avg/max, resting estimate, measure now |
-| HRV | "all" history, body-data history/upload, RR intervals | latest, 24 h chart, SDNN, RMSSD, pNN50, LF/HF, VO₂max |
+| HRV | "all" history, body-data RMSSD/SDNN, RR intervals | latest, 24 h chart, SDNN, RMSSD, pNN50, LF/HF, VO₂max |
 | Sleep | sleep history (per-stage records) | total asleep, bed and wake times, hypnogram, deep/light/REM/awake, times awake, score (est.), last 7 nights |
 | Steps, distance, calories | live snapshot, sport history | today's ring vs. 10k goal, hourly bars, 7-day bars |
 | Blood pressure | live snapshot, BP history, measurement results | latest with AHA category, 24 h range chart, measure now |
 | Blood oxygen (SpO₂) | live snapshot, SpO₂ history | latest, 24 h chart, min/avg, measure now |
 | Temperature | live snapshot, temperature history | latest (°C/°F), 24 h chart, measure now |
-| Stress, fatigue, body energy | body-data history/upload | stress 0–100 with level, fatigue, body energy, sympathetic activity |
+| Stress, fatigue, HRV index | body-data history/upload (the ring's own 0–10 indices) | stress 0–10 with level (lower HRV → higher stress), fatigue, HRV index, body index, sympathetic balance |
 | Respiration rate | live snapshot, "all" history | latest, 24 h chart, measure now |
 | Blood glucose, uric acid, ketone, lipids | blood-chemistry history (rings that support it) | shown only when the ring reports them |
 | Ring battery, firmware | device info, standard Battery service | home screen and Ring page |

@@ -39,24 +39,37 @@ struct RespirationSample: TimedSample {
 }
 
 /// Stress and autonomic metrics from the ring's "body data" records (SDK: `Health_History_Body_Data`).
+///
+/// The first five fields are the vendor's "health norm" indices (SDK `HealthNormBean`), scored
+/// 0–10 where higher means more strain. They are scores, not measurements: the HRV index rises
+/// as heart-rate variability *falls* (vendor `calc_HRV_norm`: 10 ms → 10, 150 ms → ≈ 0.9).
+/// SDNN and RMSSD are the actual HRV in milliseconds.
 struct BodyMetricsSample: TimedSample {
     var date: Date
-    /// Stress / pressure index, 0–100.
+    /// Stress ("pressure") index, 0–10. Higher = more stress.
     var stress: Double?
-    /// Fatigue ("load index"), 0–100.
+    /// Fatigue ("heavy load") index, 0–10. Higher = more fatigue.
     var fatigue: Double?
-    /// Body energy / vitality, 0–100.
-    var bodyEnergy: Double?
-    /// Sympathetic nervous activity, 0–100.
-    var sympathetic: Double?
-    var hrv: Double?
+    /// Body-status index, 0–10.
+    var bodyIndex: Double?
+    /// Sympathetic–parasympathetic balance, −10…10 (positive = sympathetic dominant).
+    var sympatheticBalance: Double?
+    /// HRV index, 0–10. Higher = LOWER heart-rate variability.
+    var hrvIndex: Double?
+    /// Milliseconds.
     var sdnn: Int?
+    /// Milliseconds.
     var rmssd: Int?
     var pnn50: Int?
     var lf: Int?
     var hf: Int?
     var lfHfRatio: Double?
     var vo2max: Int?
+
+    /// Heart-rate variability in milliseconds (RMSSD, else SDNN).
+    var hrvMilliseconds: Double? {
+        (rmssd ?? sdnn).map { Double($0) }
+    }
 }
 
 /// Steps, distance and energy for one interval (history records cover minutes to an hour).
@@ -165,7 +178,9 @@ struct LiveSnapshot: Codable, Hashable {
     var bloodOxygen: Int?
     var respiratoryRate: Int?
     var temperature: Double?
+    /// Heart-rate variability in milliseconds.
     var hrv: Double?
+    /// Stress index, 0–10 (see `BodyMetricsSample.stress`).
     var stress: Double?
     var stepsToday: Int?
     var distanceTodayMeters: Int?
@@ -219,5 +234,8 @@ enum Plausible {
     static func respiration(_ v: Int) -> Int? { (4...60).contains(v) ? v : nil }
     static func temperature(_ v: Double) -> Double? { (30.0...43.0).contains(v) ? v : nil }
     static func hrv(_ v: Double) -> Double? { (1.0...300.0).contains(v) ? v : nil }
-    static func percentScore(_ v: Double) -> Double? { (1.0...100.0).contains(v) ? v : nil }
+    /// Vendor health-norm indices (stress, fatigue, HRV index, body): 0–10.
+    static func healthIndex(_ v: Double) -> Double? { (0.0...10.0).contains(v) ? v : nil }
+    /// Sympathetic–parasympathetic balance: −10…10.
+    static func balance(_ v: Double) -> Double? { (-10.0...10.0).contains(v) ? v : nil }
 }
