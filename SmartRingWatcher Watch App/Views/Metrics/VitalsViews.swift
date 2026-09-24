@@ -163,7 +163,7 @@ struct StressView: View {
         ScrollView {
             VStack(spacing: 12) {
                 if let latest = store.latestStress {
-                    HeroValue(style: .stress, value: latest.value.noDecimals, unit: "/ 100",
+                    HeroValue(style: .stress, value: latest.value.oneDecimal, unit: "/ 10",
                               date: latest.date, caption: Self.level(for: latest.value))
                 } else {
                     NoDataView(style: .stress)
@@ -171,20 +171,22 @@ struct StressView: View {
 
                 let stressPoints = recent.compactMap { s in s.stress.map { ChartPoint(date: s.date, value: $0) } }
                 if !stressPoints.isEmpty {
-                    TrendChart(points: stressPoints, color: MetricStyle.stress.color, yDomain: 0...100)
+                    TrendChart(points: stressPoints, color: MetricStyle.stress.color, yDomain: 0...10)
                 }
 
                 if let metrics = store.latestBodyMetrics {
                     VStack(spacing: 4) {
-                        if let fatigue = metrics.fatigue { DetailRow(label: "Fatigue", value: fatigue.noDecimals) }
-                        if let energy = metrics.bodyEnergy { DetailRow(label: "Body energy", value: energy.noDecimals) }
-                        if let sympathetic = metrics.sympathetic {
-                            DetailRow(label: "Sympathetic", value: sympathetic.noDecimals)
+                        if let hrvIndex = metrics.hrvIndex { DetailRow(label: "HRV index", value: "\(hrvIndex.oneDecimal) / 10") }
+                        if let hrv = metrics.hrvMilliseconds { DetailRow(label: "HRV", value: "\(hrv.noDecimals) ms") }
+                        if let fatigue = metrics.fatigue { DetailRow(label: "Fatigue", value: "\(fatigue.oneDecimal) / 10") }
+                        if let bodyIndex = metrics.bodyIndex { DetailRow(label: "Body index", value: "\(bodyIndex.oneDecimal) / 10") }
+                        if let balance = metrics.sympatheticBalance {
+                            DetailRow(label: "Sympathetic balance", value: String(format: "%+.1f", balance))
                         }
                     }
                 }
 
-                Text("Stress is derived from heart-rate variability: 0–29 relaxed, 30–59 normal, 60–79 medium, 80+ high.")
+                Text("The ring scores stress 0–10 from heart-rate variability: the lower your HRV, the higher the score (and the HRV index). Under 3 relaxed, 3–5.9 normal, 6–7.9 medium, 8+ high.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -195,9 +197,9 @@ struct StressView: View {
 
     static func level(for value: Double) -> String {
         switch value {
-        case ..<30: return "Relaxed"
-        case ..<60: return "Normal"
-        case ..<80: return "Medium"
+        case ..<3: return "Relaxed"
+        case ..<6: return "Normal"
+        case ..<8: return "Medium"
         default: return "High"
         }
     }

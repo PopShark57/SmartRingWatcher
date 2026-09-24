@@ -375,7 +375,8 @@ final class RingSyncEngine: ObservableObject {
     // MARK: - Demo mode
 
     private func startDemo() {
-        if store.heartRate.isEmpty || store.deviceInfo?.deviceID != DemoDataGenerator.deviceInfo.deviceID {
+        if store.heartRate.isEmpty || store.bodyMetrics.isEmpty
+            || store.deviceInfo?.deviceID != DemoDataGenerator.deviceInfo.deviceID {
             store.replaceAll(with: DemoDataGenerator.history(),
                              live: DemoDataGenerator.live(previous: LiveSnapshot()),
                              device: DemoDataGenerator.deviceInfo)
