@@ -1,9 +1,11 @@
 import CoreBluetooth
 import Foundation
+import Observation
 
 /// GATT identifiers. The YC service is what Smarthealth-compatible rings expose; the
 /// Nordic UART service carries the same frames on some models; the standard Heart Rate,
 /// Battery and Device Information services are used when present (any "generic" ring).
+@MainActor
 enum RingUUID {
     static let ycService = CBUUID(string: "BE940000-7333-BE46-B7AE-689E71722BD5")
     static let ycWrite = CBUUID(string: "BE940001-7333-BE46-B7AE-689E71722BD5")
@@ -30,77 +32,93 @@ enum RingUUID {
 struct DiscoveredRing: Identifiable, Hashable {
     let id: UUID
     var name: String
+    /// Smoothed signal strength in dBm.
     var rssi: Int
     var looksLikeRing: Bool
-}
 
-enum RingConnectionState: Equatable {
-    case bluetoothUnavailable(String)
-    case idle
-    case scanning
-    case connecting(String)
-    case discovering
-    case ready
-    case reconnecting
-
-    var label: String {
-        switch self {
-        case .bluetoothUnavailable(let reason): return reason
-        case .idle: return "Not connected"
-        case .scanning: return "Scanning…"
-        case .connecting(let name): return "Connecting to \(name)…"
-        case .discovering: return "Setting up…"
-        case .ready: return "Connected"
-        case .reconnecting: return "Reconnecting…"
-        }
+    /// 0…1 for `Image(systemName: "cellularbars", variableValue:)`: −90 dBm is empty, −50 full.
+    var signalLevel: Double {
+        min(1, max(0, Double(rssi + 90) / 40))
     }
-
-    var isConnected: Bool { self == .ready }
-}
-
-protocol RingTransportDelegate: AnyObject {
-    func transportDidBecomeReady(_ transport: RingBluetoothManager)
-    func transportDidDisconnect(_ transport: RingBluetoothManager)
-    /// Raw YC notification bytes (from BE940001/BE940003 or the UART TX characteristic).
-    func transport(_ transport: RingBluetoothManager, didReceive data: Data)
-    func transport(_ transport: RingBluetoothManager, didReceiveHeartRate bpm: Int, rrIntervals: [Double])
-    func transport(_ transport: RingBluetoothManager, didReadBattery percent: Int)
 }
 
 /// CoreBluetooth central: scanning, connecting, auto-reconnect, service discovery,
 /// subscriptions and a serialized write queue. All callbacks arrive on the main queue.
-final class RingBluetoothManager: NSObject, ObservableObject {
-    @Published private(set) var state: RingConnectionState = .idle
-    @Published private(set) var discovered: [DiscoveredRing] = []
-    @Published private(set) var connectedName: String?
-    /// "YC" when the Smarthealth protocol is available, "Standard GATT" otherwise.
-    @Published private(set) var protocolName: String?
-    @Published private(set) var gattInfo: [String: String] = [:]
-    @Published private(set) var savedRingID: UUID?
+@MainActor
+@Observable
+final class RingBluetoothManager: NSObject, RingTransport {
+    private(set) var state: RingConnectionState = .idle {
+        didSet { if state != oldValue { stateChanged(from: oldValue) } }
+    }
+    /// Scan results, republished at most once a second and ordered by likely ring, then by
+    /// signal strength in coarse steps, so rows don't jump around as RSSI fluctuates.
+    private(set) var discovered: [DiscoveredRing] = []
+    private(set) var connectedName: String?
+    /// "YC (Smarthealth)" when the ring speaks the protocol, "Standard GATT" otherwise.
+    private(set) var protocolName: String?
+    private(set) var gattInfo: [String: String] = [:]
+    private(set) var savedRingID: UUID?
+    /// The user pressed Disconnect. Persisted, so the ring stays free for the phone app until
+    /// the user presses Reconnect, even across launches and wrist raises.
+    private(set) var isPaused: Bool
+    private(set) var lastConnectedAt: Date?
+    /// A connection attempt from the pairing screen has taken more than 15 s.
+    private(set) var isSlowToConnect = false
+    /// Reconnecting for more than 30 s: the ring is probably out of range or busy.
+    private(set) var isWaitingForRing = false
+    private(set) var maximumWriteLength: Int?
+    private(set) var connectedRingID: UUID?
 
-    weak var delegate: RingTransportDelegate?
+    /// Demo mode: no scanning or connecting, without touching the pause or the saved ring.
+    var isSuspended = false {
+        didSet { if isSuspended != oldValue { suspendedChanged() } }
+    }
 
-    private static let savedRingKey = "SavedRingIdentifier"
-    private static let savedRingNameKey = "SavedRingName"
+    @ObservationIgnored weak var delegate: (any RingTransportDelegate)?
 
-    private var central: CBCentralManager!
-    private var peripheral: CBPeripheral?
-    private var peripheralsByID: [UUID: CBPeripheral] = [:]
-    private var writeCharacteristic: CBCharacteristic?
-    private var notifyCharacteristics: Set<CBUUID> = []
-    private var pendingServiceDiscoveries = 0
-    private var writeQueue: [Data] = []
-    private var awaitingWriteResponse = false
-    private var scanStopTimer: Timer?
-    private var readyFallbackTimer: Timer?
-    private var autoConnect = true
+    private enum Keys {
+        static let savedRing = "SavedRingIdentifier"
+        static let savedRingName = "SavedRingName"
+        static let paused = "SavedRingPaused"
+        static let lastConnected = "SavedRingLastConnected"
+    }
+
+    private struct ScanResult {
+        var peripheral: CBPeripheral
+        var name: String
+        var smoothedRSSI: Double
+        var looksLikeRing: Bool
+    }
+
+    @ObservationIgnored private let log: DiagnosticsLog
+    @ObservationIgnored private let scheduler: any Scheduling
+    @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored private var central: CBCentralManager!
+    @ObservationIgnored private var peripheral: CBPeripheral?
+    @ObservationIgnored private var peripheralsByID: [UUID: CBPeripheral] = [:]
+    @ObservationIgnored private var scanResults: [UUID: ScanResult] = [:]
+    @ObservationIgnored private var writeCharacteristic: CBCharacteristic?
+    @ObservationIgnored private var batteryCharacteristic: CBCharacteristic?
+    @ObservationIgnored private var notifyCharacteristics: Set<CBUUID> = []
+    @ObservationIgnored private var pendingServiceDiscoveries = 0
+    @ObservationIgnored private var writeQueue: [Data] = []
+    @ObservationIgnored private var awaitingWriteResponse = false
+    @ObservationIgnored private var scanStopTimer: (any Cancellable)?
+    @ObservationIgnored private var scanPublishTimer: (any Cancellable)?
+    @ObservationIgnored private var readyFallbackTimer: (any Cancellable)?
+    @ObservationIgnored private var slowConnectTimer: (any Cancellable)?
 
     var hasProtocolChannel: Bool { writeCharacteristic != nil }
-    var savedRingName: String? { UserDefaults.standard.string(forKey: Self.savedRingNameKey) }
+    var savedRingName: String? { defaults.string(forKey: Keys.savedRingName) }
 
-    override init() {
+    init(log: DiagnosticsLog, scheduler: any Scheduling = SystemScheduler.shared, defaults: UserDefaults = .standard) {
+        self.log = log
+        self.scheduler = scheduler
+        self.defaults = defaults
+        isPaused = defaults.bool(forKey: Keys.paused)
+        lastConnectedAt = defaults.object(forKey: Keys.lastConnected) as? Date
         super.init()
-        if let stored = UserDefaults.standard.string(forKey: Self.savedRingKey) {
+        if let stored = defaults.string(forKey: Keys.savedRing) {
             savedRingID = UUID(uuidString: stored)
         }
         central = CBCentralManager(delegate: self, queue: nil)
@@ -109,21 +127,42 @@ final class RingBluetoothManager: NSObject, ObservableObject {
     // MARK: - Scanning
 
     func startScan(duration: TimeInterval = 20) {
-        guard central.state == .poweredOn else { return }
+        guard central.state == .poweredOn, !isSuspended else { return }
+        // Forget peripherals from earlier scans, except the ones in use.
+        peripheralsByID = peripheralsByID.filter { $0.key == peripheral?.identifier || $0.key == savedRingID }
+        scanResults.removeAll()
         discovered.removeAll()
-        if !state.isConnected { state = .scanning }
+        if !state.isConnected && !state.isConnecting { state = .scanning }
         central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
-        scanStopTimer?.invalidate()
-        scanStopTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
-            self?.stopScan()
-        }
+        scanStopTimer?.cancel()
+        scanStopTimer = scheduler.after(duration) { [weak self] in self?.stopScan() }
+        scanPublishTimer?.cancel()
+        scanPublishTimer = scheduler.every(1) { [weak self] in self?.publishScanResults() }
     }
 
     func stopScan() {
-        scanStopTimer?.invalidate()
+        scanStopTimer?.cancel()
         scanStopTimer = nil
+        scanPublishTimer?.cancel()
+        scanPublishTimer = nil
         if central.isScanning { central.stopScan() }
-        if state == .scanning { state = .idle }
+        publishScanResults()
+        if state == .scanning { state = restingState }
+    }
+
+    private func publishScanResults() {
+        let rings = scanResults.map { id, result in
+            DiscoveredRing(id: id, name: result.name, rssi: Int(result.smoothedRSSI.rounded()),
+                           looksLikeRing: result.looksLikeRing)
+        }
+        let sorted = rings.sorted { lhs, rhs in
+            if lhs.looksLikeRing != rhs.looksLikeRing { return lhs.looksLikeRing }
+            // 6 dB steps, so small fluctuations don't reorder the list.
+            let lhsBucket = lhs.rssi / 6, rhsBucket = rhs.rssi / 6
+            if lhsBucket != rhsBucket { return lhsBucket > rhsBucket }
+            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+        }
+        if sorted != discovered { discovered = sorted }
     }
 
     // MARK: - Connecting
@@ -134,43 +173,95 @@ final class RingBluetoothManager: NSObject, ObservableObject {
         if let current = peripheral, current.identifier != target.identifier {
             central.cancelPeripheralConnection(current)
         }
-        UserDefaults.standard.set(target.identifier.uuidString, forKey: Self.savedRingKey)
-        UserDefaults.standard.set(ring.name, forKey: Self.savedRingNameKey)
+        defaults.set(target.identifier.uuidString, forKey: Keys.savedRing)
+        defaults.set(ring.name, forKey: Keys.savedRingName)
         savedRingID = target.identifier
-        autoConnect = true
+        setPaused(false)
         connect(target, name: ring.name)
     }
 
     /// Reconnects to the remembered ring. A pending `connect` never times out in
     /// CoreBluetooth, so the ring is picked up as soon as it is in range again.
+    /// Does nothing while the user has paused the connection or demo mode is on.
     func connectSavedRing() {
-        guard central.state == .poweredOn, let id = savedRingID, !state.isConnected else { return }
-        autoConnect = true
+        guard central.state == .poweredOn, let id = savedRingID, !isPaused, !isSuspended,
+              !state.isConnected else { return }
+        if peripheral?.identifier == id, state.isConnecting { return }
         if let known = central.retrievePeripherals(withIdentifiers: [id]).first {
-            connect(known, name: known.name ?? savedRingName ?? "ring")
-        } else {
+            connect(known, name: known.name ?? savedRingName ?? String(localized: "ring"))
+        } else if state != .scanning {
             // Not known to the system yet: find it by scanning (see didDiscover).
             startScan()
         }
     }
 
-    /// Disconnects and stops auto-reconnecting until `connectSavedRing()` is called again.
-    /// `forget` also clears the remembered ring.
+    /// Clears the pause set by Disconnect and connects again.
+    func reconnect() {
+        setPaused(false)
+        connectSavedRing()
+    }
+
+    /// Disconnects. Without `forget`, the connection stays paused (see `isPaused`) until
+    /// `reconnect()`, so Smarthealth on the phone can connect meanwhile. `forget` also clears
+    /// the remembered ring.
     func disconnect(forget: Bool) {
-        autoConnect = false
         if forget {
-            UserDefaults.standard.removeObject(forKey: Self.savedRingKey)
-            UserDefaults.standard.removeObject(forKey: Self.savedRingNameKey)
+            defaults.removeObject(forKey: Keys.savedRing)
+            defaults.removeObject(forKey: Keys.savedRingName)
+            defaults.removeObject(forKey: Keys.lastConnected)
             savedRingID = nil
+            lastConnectedAt = nil
+            setPaused(false)
+        } else {
+            setPaused(true)
         }
+        dropConnection()
+        log.add(forget ? "Forgot the ring" : "Paused by the user", category: .ble)
+    }
+
+    /// Gives up a connection attempt that isn't getting anywhere (pairing screen's Cancel).
+    func cancelConnectionAttempt() {
+        disconnect(forget: false)
+    }
+
+    func readBattery() {
+        guard let peripheral, let batteryCharacteristic else { return }
+        peripheral.readValue(for: batteryCharacteristic)
+    }
+
+    private func setPaused(_ paused: Bool) {
+        guard paused != isPaused else { return }
+        isPaused = paused
+        defaults.set(paused, forKey: Keys.paused)
+    }
+
+    private func suspendedChanged() {
+        if isSuspended {
+            if central.isScanning { stopScan() }
+            dropConnection()
+        } else {
+            connectSavedRing()
+        }
+    }
+
+    /// Cancels the current or pending connection and settles in the resting state.
+    private func dropConnection() {
+        let wasReady = state == .ready
         if let peripheral {
             central.cancelPeripheralConnection(peripheral)
         }
-        if forget {
-            // The disconnect callback will no longer see a ready connection, so notify now.
-            if state == .ready { delegate?.transportDidDisconnect(self) }
-            state = .idle
-        }
+        // The disconnect callback is ignored once `peripheral` is nil, so notify now.
+        peripheral = nil
+        resetConnectionState()
+        if wasReady { delegate?.transportDidDisconnect(self) }
+        if case .bluetoothUnavailable = state { return }
+        state = restingState
+    }
+
+    private var restingState: RingConnectionState {
+        if case .bluetoothUnavailable(let reason) = state { return .bluetoothUnavailable(reason) }
+        if peripheral != nil, !isPaused, !isSuspended { return .reconnecting }
+        return isPaused && savedRingID != nil ? .paused : .idle
     }
 
     private func connect(_ target: CBPeripheral, name: String) {
@@ -179,6 +270,24 @@ final class RingBluetoothManager: NSObject, ObservableObject {
         target.delegate = self
         state = .connecting(name)
         central.connect(target, options: nil)
+    }
+
+    private func stateChanged(from old: RingConnectionState) {
+        slowConnectTimer?.cancel()
+        slowConnectTimer = nil
+        isSlowToConnect = false
+        isWaitingForRing = false
+        switch state {
+        case .connecting:
+            slowConnectTimer = scheduler.after(15) { [weak self] in self?.isSlowToConnect = true }
+        case .reconnecting:
+            slowConnectTimer = scheduler.after(30) { [weak self] in self?.isWaitingForRing = true }
+        case .ready:
+            lastConnectedAt = scheduler.now
+            defaults.set(lastConnectedAt, forKey: Keys.lastConnected)
+        default:
+            break
+        }
     }
 
     // MARK: - Writing
@@ -218,30 +327,42 @@ final class RingBluetoothManager: NSObject, ObservableObject {
     // MARK: - Helpers
 
     private func resetConnectionState() {
-        readyFallbackTimer?.invalidate()
+        readyFallbackTimer?.cancel()
         readyFallbackTimer = nil
         writeCharacteristic = nil
+        batteryCharacteristic = nil
         notifyCharacteristics.removeAll()
         pendingServiceDiscoveries = 0
         writeQueue.removeAll()
         awaitingWriteResponse = false
         connectedName = nil
         protocolName = nil
+        connectedRingID = nil
+        maximumWriteLength = nil
     }
 
     private func markReadyIfPossible(force: Bool = false) {
-        guard state == .discovering else { return }
+        guard state == .discovering, let peripheral else { return }
         if !force {
             guard pendingServiceDiscoveries == 0 else { return }
             // With a protocol channel, wait until its indications are switched on.
             let protocolNotify: Set<CBUUID> = [RingUUID.ycWrite, RingUUID.ycNotify, RingUUID.uartNotify]
             if writeCharacteristic != nil && notifyCharacteristics.isDisjoint(with: protocolNotify) { return }
         }
-        readyFallbackTimer?.invalidate()
+        readyFallbackTimer?.cancel()
         readyFallbackTimer = nil
-        protocolName = writeCharacteristic == nil ? "Standard GATT" : "YC (Smarthealth)"
+        protocolName = writeCharacteristic == nil ? String(localized: "Standard GATT") : "YC (Smarthealth)"
+        connectedRingID = peripheral.identifier
+        if let characteristic = writeCharacteristic {
+            maximumWriteLength = peripheral.maximumWriteValueLength(for: writeType(for: characteristic))
+        }
         state = .ready
         delegate?.transportDidBecomeReady(self)
+    }
+
+    private func logError(_ context: String, _ error: Error?) {
+        guard let error else { return }
+        log.add("\(context): \(error.localizedDescription)", category: .ble, isError: true)
     }
 
     private static func looksLikeRing(name: String, advertised: [CBUUID]) -> Bool {
@@ -254,7 +375,7 @@ final class RingBluetoothManager: NSObject, ObservableObject {
 
 // MARK: - CBCentralManagerDelegate
 
-extension RingBluetoothManager: CBCentralManagerDelegate {
+extension RingBluetoothManager: @preconcurrency CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         // Connections are dropped when Bluetooth goes away, without a disconnect callback.
         if central.state != .poweredOn, state == .ready {
@@ -263,19 +384,23 @@ extension RingBluetoothManager: CBCentralManagerDelegate {
         }
         switch central.state {
         case .poweredOn:
-            if state != .ready { state = .idle }
-            if autoConnect { connectSavedRing() }
+            if state != .ready {
+                peripheral = nil
+                state = isPaused && savedRingID != nil ? .paused : .idle
+            }
+            connectSavedRing()
         case .poweredOff:
-            state = .bluetoothUnavailable("Bluetooth is off")
+            state = .bluetoothUnavailable(String(localized: "Bluetooth is off"))
         case .unauthorized:
-            state = .bluetoothUnavailable("Bluetooth permission denied")
+            state = .bluetoothUnavailable(String(localized: "Bluetooth permission denied"))
         case .unsupported:
-            state = .bluetoothUnavailable("Bluetooth LE unavailable")
+            state = .bluetoothUnavailable(String(localized: "Bluetooth LE unavailable"))
         case .resetting, .unknown:
-            state = .bluetoothUnavailable("Bluetooth starting…")
+            state = .bluetoothUnavailable(String(localized: "Bluetooth starting…"))
         @unknown default:
-            state = .bluetoothUnavailable("Bluetooth unavailable")
+            state = .bluetoothUnavailable(String(localized: "Bluetooth unavailable"))
         }
+        log.add("Bluetooth state \(central.state.rawValue)", category: .ble)
     }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
@@ -285,42 +410,47 @@ extension RingBluetoothManager: CBCentralManagerDelegate {
         let services = advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? []
         peripheralsByID[peripheral.identifier] = peripheral
 
-        let rssi = RSSI.intValue == 127 ? -100 : RSSI.intValue
-        let ring = DiscoveredRing(id: peripheral.identifier, name: name, rssi: rssi,
-                                  looksLikeRing: Self.looksLikeRing(name: name, advertised: services))
-        if let index = discovered.firstIndex(where: { $0.id == ring.id }) {
-            discovered[index] = ring
+        let rssi = RSSI.intValue == 127 ? -100.0 : RSSI.doubleValue
+        if var result = scanResults[peripheral.identifier] {
+            // Moving average: advertisement RSSI is noisy.
+            result.smoothedRSSI = result.smoothedRSSI * 0.7 + rssi * 0.3
+            result.name = name
+            result.looksLikeRing = result.looksLikeRing || Self.looksLikeRing(name: name, advertised: services)
+            scanResults[peripheral.identifier] = result
         } else {
-            discovered.append(ring)
-        }
-        discovered.sort { lhs, rhs in
-            if lhs.looksLikeRing != rhs.looksLikeRing { return lhs.looksLikeRing }
-            return lhs.rssi > rhs.rssi
+            scanResults[peripheral.identifier] = ScanResult(
+                peripheral: peripheral, name: name, smoothedRSSI: rssi,
+                looksLikeRing: Self.looksLikeRing(name: name, advertised: services))
+            // Show the first results right away; later updates wait for the 1 s tick.
+            if discovered.count < 3 { publishScanResults() }
         }
 
         // The remembered ring was not known to the system yet; connect when it shows up.
-        if autoConnect, peripheral.identifier == savedRingID, !state.isConnected, self.peripheral == nil {
+        if !isPaused, !isSuspended, peripheral.identifier == savedRingID, !state.isConnected, self.peripheral == nil {
             stopScan()
             connect(peripheral, name: name)
         }
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        guard peripheral.identifier == self.peripheral?.identifier else { return }
         resetConnectionState()
         connectedName = peripheral.name ?? savedRingName
         state = .discovering
         peripheral.discoverServices(RingUUID.servicesOfInterest)
         // Some firmware never confirms the indication subscription; carry on regardless.
-        readyFallbackTimer = Timer.scheduledTimer(withTimeInterval: 6, repeats: false) { [weak self] _ in
+        readyFallbackTimer = scheduler.after(6) { [weak self] in
             self?.markReadyIfPossible(force: true)
         }
     }
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        logError("Connection failed", error)
         handleLostConnection(peripheral)
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        logError("Disconnected", error)
         handleLostConnection(peripheral)
     }
 
@@ -329,21 +459,22 @@ extension RingBluetoothManager: CBCentralManagerDelegate {
         let wasReady = state == .ready
         resetConnectionState()
         if wasReady { delegate?.transportDidDisconnect(self) }
-        if autoConnect, lost.identifier == savedRingID, central.state == .poweredOn {
+        if !isPaused, !isSuspended, lost.identifier == savedRingID, central.state == .poweredOn {
             state = .reconnecting
             central.connect(lost, options: nil)
         } else {
             peripheral = nil
             if case .bluetoothUnavailable = state { return }
-            state = .idle
+            state = restingState
         }
     }
 }
 
 // MARK: - CBPeripheralDelegate
 
-extension RingBluetoothManager: CBPeripheralDelegate {
+extension RingBluetoothManager: @preconcurrency CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        logError("Service discovery failed", error)
         let services = peripheral.services ?? []
         let hasYC = services.contains { $0.uuid == RingUUID.ycService }
         for service in services {
@@ -356,6 +487,7 @@ extension RingBluetoothManager: CBPeripheralDelegate {
     }
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        logError("Characteristic discovery failed for \(service.uuid)", error)
         pendingServiceDiscoveries = max(0, pendingServiceDiscoveries - 1)
         for characteristic in service.characteristics ?? [] {
             switch characteristic.uuid {
@@ -370,6 +502,7 @@ extension RingBluetoothManager: CBPeripheralDelegate {
             case RingUUID.ycNotify, RingUUID.uartNotify, RingUUID.heartRateMeasurement:
                 peripheral.setNotifyValue(true, for: characteristic)
             case RingUUID.batteryLevel:
+                batteryCharacteristic = characteristic
                 peripheral.readValue(for: characteristic)
                 if characteristic.properties.contains(.notify) {
                     peripheral.setNotifyValue(true, for: characteristic)
@@ -384,6 +517,7 @@ extension RingBluetoothManager: CBPeripheralDelegate {
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
+        logError("Subscribing to \(characteristic.uuid) failed", error)
         if error == nil, characteristic.isNotifying {
             notifyCharacteristics.insert(characteristic.uuid)
         }
@@ -391,6 +525,7 @@ extension RingBluetoothManager: CBPeripheralDelegate {
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        logError("Reading \(characteristic.uuid) failed", error)
         guard error == nil, let value = characteristic.value else { return }
         switch characteristic.uuid {
         case RingUUID.ycWrite, RingUUID.ycNotify, RingUUID.uartNotify:
@@ -415,6 +550,7 @@ extension RingBluetoothManager: CBPeripheralDelegate {
     }
 
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        logError("Write failed", error)
         awaitingWriteResponse = false
         pumpWrites()
     }

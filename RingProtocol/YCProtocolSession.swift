@@ -1,7 +1,16 @@
 import Foundation
 
-enum MeasurementOutcome: String, Codable {
+enum MeasurementOutcome: String, Codable, Sendable {
     case success, failed, cancelled, unknown
+}
+
+/// How a request/response exchange ended.
+enum CommandResult: Equatable, Sendable {
+    case success
+    /// Transient: a timeout, a bad transfer CRC, or a length/CRC error reply. Worth retrying.
+    case failed
+    /// The ring answered "unsupported command" (`0xFB`) or "unsupported key" (`0xFC`).
+    case unsupported
 }
 
 /// Everything the protocol layer can tell the app about.
@@ -14,7 +23,9 @@ enum RingEvent: Equatable {
     case samples(HealthBatch)
     case deviceInfo(DeviceInfo)
     /// A request/response exchange finished; the command queue may send the next command.
-    case completed(YCDataType, success: Bool)
+    case completed(YCDataType, CommandResult)
+    /// A history transfer arrived intact: its size on the air and the records it held.
+    case historyReceived(YCDataType, bytes: Int, records: Int)
     /// A one-off measurement started with `YCCommand.startMeasurement` has ended.
     case measurementFinished(MeasurementKind?, MeasurementOutcome)
 }
@@ -83,17 +94,18 @@ final class YCProtocolSession {
         if frame.isErrorReply, type.group != YCGroup.appControl, type.group != YCGroup.deviceControl,
            type.group != YCGroup.realTime {
             if type.group == YCGroup.health { transfer = nil }
-            out.events.append(.completed(type, success: false))
+            let unsupported = p.first == 0xFB || p.first == 0xFC
+            out.events.append(.completed(type, unsupported ? .unsupported : .failed))
             return out
         }
 
         switch type.group {
         case YCGroup.setting, YCGroup.appControl:
-            out.events.append(.completed(type, success: p.first.map { $0 == 0 } ?? true))
+            out.events.append(.completed(type, p.first.map { $0 == 0 } ?? true ? .success : .failed))
 
         case YCGroup.get:
             handleGet(type, p, now: now, into: &out)
-            out.events.append(.completed(type, success: true))
+            out.events.append(.completed(type, .success))
 
         case YCGroup.deviceControl:
             handleDeviceEvent(type, p, now: now, into: &out)
@@ -221,7 +233,7 @@ final class YCProtocolSession {
             } else {
                 // Nothing stored for this type.
                 transfer = nil
-                out.events.append(.completed(type, success: true))
+                out.events.append(.completed(type, .success))
             }
             return
         }
@@ -235,10 +247,11 @@ final class YCProtocolSession {
                 out.replies.append(YCCommand.historyTransferOK)
                 let batch = YCParsers.history(requestKey: current.requestKey, bytes: current.bytes, timeZone: timeZone)
                 if !batch.isEmpty { out.events.append(.samples(batch)) }
-                out.events.append(.completed(requestType, success: true))
+                out.events.append(.historyReceived(requestType, bytes: current.bytes.count, records: batch.totalCount))
+                out.events.append(.completed(requestType, .success))
             } else {
                 out.replies.append(YCCommand.historyTransferFailed)
-                out.events.append(.completed(requestType, success: false))
+                out.events.append(.completed(requestType, .failed))
             }
             return
         }
@@ -277,7 +290,10 @@ final class YCProtocolSession {
         case .realBodyData:
             if let body = YCParsers.bodyMetrics(p, date: now) {
                 var s = LiveSnapshot(updatedAt: now)
-                s.hrv = body.hrvMilliseconds.flatMap(Plausible.hrv)
+                if let hrv = body.hrvMilliseconds.flatMap(Plausible.hrv) {
+                    s.hrv = hrv
+                    s.hrvKind = body.hrvKind
+                }
                 s.stress = body.stress
                 out.events.append(.live(s, pushed: true))
                 var batch = HealthBatch()

@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Values come from the vendor SDK (`Constants.DATATYPE` in `ycbtsdk-release.aar`), which
 /// is the SDK the Smarthealth app is built on. See `docs/PROTOCOL.md` for the full table.
-struct YCDataType: RawRepresentable, Hashable, Codable, CustomStringConvertible {
+struct YCDataType: RawRepresentable, Hashable, Codable, CustomStringConvertible, Sendable {
     let rawValue: UInt16
 
     init(rawValue: UInt16) {
@@ -91,7 +91,7 @@ extension YCDataType {
 
 /// Measurement kinds shared by `appStartMeasurement` (0x032F) and the ring's
 /// measurement status event (0x0413).
-enum MeasurementKind: UInt8, Codable, CaseIterable, Identifiable {
+enum MeasurementKind: UInt8, Codable, CaseIterable, Identifiable, Sendable {
     case heartRate = 0
     case bloodPressure = 1
     case bloodOxygen = 2
@@ -105,14 +105,14 @@ enum MeasurementKind: UInt8, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .heartRate: return "Heart rate"
-        case .bloodPressure: return "Blood pressure"
-        case .bloodOxygen: return "Blood oxygen"
-        case .respiratoryRate: return "Respiration"
-        case .temperature: return "Temperature"
-        case .bloodGlucose: return "Blood glucose"
-        case .uricAcid: return "Uric acid"
-        case .bloodKetone: return "Blood ketone"
+        case .heartRate: return String(localized: "Heart rate")
+        case .bloodPressure: return String(localized: "Blood pressure")
+        case .bloodOxygen: return String(localized: "Blood oxygen")
+        case .respiratoryRate: return String(localized: "Respiration")
+        case .temperature: return String(localized: "Temperature")
+        case .bloodGlucose: return String(localized: "Blood glucose")
+        case .uricAcid: return String(localized: "Uric acid")
+        case .bloodKetone: return String(localized: "Blood ketone")
         }
     }
 }

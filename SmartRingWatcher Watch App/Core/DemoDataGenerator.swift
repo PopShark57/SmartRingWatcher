@@ -1,7 +1,8 @@
 import Foundation
 
 /// Realistic synthetic data so the UI can be explored in the watch simulator, which has
-/// no Bluetooth. Nothing here is sent to or read from a ring.
+/// no Bluetooth. Nothing here is sent to or read from a ring, and it lives in its own
+/// in-memory store, so the real cache is never touched.
 enum DemoDataGenerator {
     static let deviceInfo = DeviceInfo(deviceID: 0xD3E0, firmwareVersion: "1.07", batteryPercent: 76, batteryState: 0)
 
@@ -29,7 +30,7 @@ enum DemoDataGenerator {
                 batch.temperature.append(TemperatureSample(date: t, celsius: (celsius * 10).rounded() / 10))
                 batch.respiration.append(RespirationSample(date: t, breathsPerMinute: Int(15 + (asleep ? -2 : 1) + rng.gaussian())))
                 let hrvValue: Double = max(15, 48 + (asleep ? 14 : -6) + rng.gaussian() * 6)
-                batch.hrv.append(HRVSample(date: t, milliseconds: hrvValue.rounded()))
+                batch.hrv.append(HRVSample(date: t, milliseconds: hrvValue.rounded(), kind: .rmssd))
                 // Same direction as the ring: lower HRV → higher HRV index → higher stress.
                 let hrvIndex = vendorHRVIndex(hrvValue)
                 let stress: Double = min(9.8, max(0.2, hrvIndex * 0.8 + rng.gaussian() * 0.5))
@@ -96,6 +97,7 @@ enum DemoDataGenerator {
         s.respiratoryRate = previous.respiratoryRate ?? 15
         s.temperature = previous.temperature ?? 36.5
         s.hrv = previous.hrv ?? 46
+        s.hrvKind = .rmssd
         s.stress = previous.stress ?? roundedToTenth(vendorHRVIndex(46) * 0.8)
         let steps = (previous.stepsToday ?? 3200) + Int(abs(rng.gaussian()) * 12)
         s.stepsToday = steps
@@ -127,7 +129,7 @@ private func roundedToTenth(_ value: Double) -> Double {
 }
 
 /// Small deterministic PRNG (SplitMix64) so demo data looks the same on every launch.
-struct SeededGenerator: RandomNumberGenerator {
+struct SeededGenerator: RandomNumberGenerator, Sendable {
     private var state: UInt64
 
     init(seed: UInt64) { state = seed }

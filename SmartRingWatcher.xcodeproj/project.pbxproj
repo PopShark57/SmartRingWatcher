@@ -3,67 +3,77 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		09125FCCE3A638735168AE94 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 720A3AE71FE07DC9F3E36F49 /* Assets.xcassets */; };
-		0A2533E54F2FCB66733492AC /* HealthDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2497D1A0C95A6A2F1ECB1F /* HealthDataStore.swift */; };
-		0B2F68945E7265DDF2222B3C /* VitalsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C2C46FDB070EB5CEEAC475 /* VitalsViews.swift */; };
-		0F908940F1645730D4F227ED /* HealthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0484118E3164D7DA9E524610 /* HealthModels.swift */; };
-		20ADB29F4476E34C734ABBE3 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A39FDD073C94CC0894636F /* Components.swift */; };
-		2EE1143A1FE11E2151E48F19 /* RingBluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8951516EC2B845BA4194913D /* RingBluetoothManager.swift */; };
-		2F0E9E3A1E56C6FFCD2744CF /* YCCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ECD92AF6F253125669129B7 /* YCCommands.swift */; };
-		46F51AED09FDCEA157D63DEF /* DeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3D76D6AA39206011ABF4A1 /* DeviceView.swift */; };
-		4743A1261EB6972187D26254 /* RingSyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BCEDF1D8F47696FD2788D9C /* RingSyncEngine.swift */; };
-		612542651AA689F3A432B728 /* DemoDataGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A6E90BA7AB4D394768C3B0D /* DemoDataGenerator.swift */; };
-		6A3F1CCA1DAFF1FE6EFF7487 /* YCTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4333B1503EB73CC5633BE1A1 /* YCTime.swift */; };
-		6BC4FDA740B23CDB21804593 /* SleepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE43D9DD24878115AA5FA04 /* SleepView.swift */; };
-		76E61924782A53FDE026D973 /* YCFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56FB673934B15078BB06680E /* YCFrame.swift */; };
-		87CF6E10619395EE33FF7A4F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A5A40371A7C4EA49C7410AB /* RootView.swift */; };
-		A0103CE29DF3CACF3946DFC6 /* CRC16.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF02C7D18EB77C6D2106025D /* CRC16.swift */; };
-		A2FB8FCA2AFBAED113ADE0B2 /* Charts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33E92F744ABF219D48F2F4D2 /* Charts.swift */; };
-		B044CE8EBD3BFA30303010EE /* YCDataType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3ACF55A2F8B5B7D4B48741 /* YCDataType.swift */; };
-		B115599915FA30EE95CE3101 /* SmartRingWatcherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF175401BEB132A0748295CC /* SmartRingWatcherApp.swift */; };
-		B98C4403378D5A050743F4BE /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C966839152B9EAAB376F54 /* AppSettings.swift */; };
-		CCE52DA8EA82006CD591F593 /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD496D37D6FD0F3629B55AFA /* ActivityView.swift */; };
-		D18455F35835BCC47D679002 /* HeartRateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10E171F6D98F502A12D23B3E /* HeartRateView.swift */; };
-		D852A3756B8A1CB772154E57 /* ByteReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = D363F10B066C2F8BD830DB62 /* ByteReading.swift */; };
-		E78F5930D631854637EF0811 /* YCProtocolSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73FFC7612A141FF38A610E45 /* YCProtocolSession.swift */; };
-		FF75499C4ABDBBC933464BC2 /* YCParsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C5EA379147073E50B3065EB /* YCParsers.swift */; };
+		D222647C38D1EB43A9EE692E /* SmartRingWatcher Widget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9DF0A45ECE4E959812AC9DFC /* SmartRingWatcher Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		72875DA3CD07BA5396A21EBD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4DD9AF86443E9788D89C4975 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 807DA29A9A2CFA681A2F1352;
+			remoteInfo = "SmartRingWatcher Widget";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FA993299C65EE6252CF5CA51 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D222647C38D1EB43A9EE692E /* SmartRingWatcher Widget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		0484118E3164D7DA9E524610 /* HealthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthModels.swift; sourceTree = "<group>"; };
-		07C2C46FDB070EB5CEEAC475 /* VitalsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VitalsViews.swift; sourceTree = "<group>"; };
-		0BCEDF1D8F47696FD2788D9C /* RingSyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingSyncEngine.swift; sourceTree = "<group>"; };
-		10E171F6D98F502A12D23B3E /* HeartRateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeartRateView.swift; sourceTree = "<group>"; };
-		17C966839152B9EAAB376F54 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
-		1ECD92AF6F253125669129B7 /* YCCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YCCommands.swift; sourceTree = "<group>"; };
-		2A5A40371A7C4EA49C7410AB /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		33E92F744ABF219D48F2F4D2 /* Charts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Charts.swift; sourceTree = "<group>"; };
-		4333B1503EB73CC5633BE1A1 /* YCTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YCTime.swift; sourceTree = "<group>"; };
-		4AE43D9DD24878115AA5FA04 /* SleepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepView.swift; sourceTree = "<group>"; };
-		4CDCE080100AF972260B30D0 /* SmartRingWatcher Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SmartRingWatcher Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		56FB673934B15078BB06680E /* YCFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YCFrame.swift; sourceTree = "<group>"; };
-		5B3ACF55A2F8B5B7D4B48741 /* YCDataType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YCDataType.swift; sourceTree = "<group>"; };
-		6A6E90BA7AB4D394768C3B0D /* DemoDataGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoDataGenerator.swift; sourceTree = "<group>"; };
-		720A3AE71FE07DC9F3E36F49 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		73FFC7612A141FF38A610E45 /* YCProtocolSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YCProtocolSession.swift; sourceTree = "<group>"; };
-		8951516EC2B845BA4194913D /* RingBluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingBluetoothManager.swift; sourceTree = "<group>"; };
-		9C5EA379147073E50B3065EB /* YCParsers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YCParsers.swift; sourceTree = "<group>"; };
-		9D2497D1A0C95A6A2F1ECB1F /* HealthDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataStore.swift; sourceTree = "<group>"; };
-		A0B6AC6C79FA44DE67BB9C68 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		CA3D76D6AA39206011ABF4A1 /* DeviceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceView.swift; sourceTree = "<group>"; };
-		CD496D37D6FD0F3629B55AFA /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
-		D363F10B066C2F8BD830DB62 /* ByteReading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ByteReading.swift; sourceTree = "<group>"; };
-		D3A39FDD073C94CC0894636F /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
-		EF175401BEB132A0748295CC /* SmartRingWatcherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartRingWatcherApp.swift; sourceTree = "<group>"; };
-		FF02C7D18EB77C6D2106025D /* CRC16.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CRC16.swift; sourceTree = "<group>"; };
+		EA143DA0C48116F825AFF912 /* SmartRingWatcher Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SmartRingWatcher Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9DF0A45ECE4E959812AC9DFC /* SmartRingWatcher Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "SmartRingWatcher Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		222AF623DED93B565BDD4AAF /* Exceptions for "SmartRingWatcher Watch App" folder in "SmartRingWatcher Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				SmartRingWatcher.entitlements,
+			);
+			target = 8FF67FE97A59D14757C36C36 /* SmartRingWatcher Watch App */;
+		};
+		7176D95125C1659A39D4E814 /* Exceptions for "SmartRingWatcher Widget" folder in "SmartRingWatcher Widget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				"SmartRingWatcher Widget.entitlements",
+			);
+			target = 807DA29A9A2CFA681A2F1352 /* SmartRingWatcher Widget */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		EF004D0600C1AC389CDFA574 /* SmartRingWatcher Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (222AF623DED93B565BDD4AAF /* Exceptions for "SmartRingWatcher Watch App" folder in "SmartRingWatcher Watch App" target */, ); path = "SmartRingWatcher Watch App"; sourceTree = "<group>"; };
+		E23EDE435D7A15C46DF65BFF /* RingProtocol */ = {isa = PBXFileSystemSynchronizedRootGroup; path = RingProtocol; sourceTree = "<group>"; };
+		44679FE8392600150CCEC8DE /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Shared; sourceTree = "<group>"; };
+		289CAF918B720288505F7B22 /* SmartRingWatcher Widget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (7176D95125C1659A39D4E814 /* Exceptions for "SmartRingWatcher Widget" folder in "SmartRingWatcher Widget" target */, ); path = "SmartRingWatcher Widget"; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
-		C18F88D444D8FE65E18D39E9 /* Frameworks */ = {
+		69131B2BD2BC41CD9484F95E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8AACD14D7E20F0CF7AD44D6D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -73,239 +83,160 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		14123EDEA8D2D04EE7C93524 /* Views */ = {
+		C30640F7951AAC2F4FA13234 = {
 			isa = PBXGroup;
 			children = (
-				6626D1E50509BEAD27DABF5F /* Components */,
-				79734EB8AFC2CB125269ACD2 /* Metrics */,
-				CA3D76D6AA39206011ABF4A1 /* DeviceView.swift */,
-				2A5A40371A7C4EA49C7410AB /* RootView.swift */,
+				EF004D0600C1AC389CDFA574 /* SmartRingWatcher Watch App */,
+				289CAF918B720288505F7B22 /* SmartRingWatcher Widget */,
+				44679FE8392600150CCEC8DE /* Shared */,
+				E23EDE435D7A15C46DF65BFF /* RingProtocol */,
+				8729AA77068382F4BE7AE875 /* Products */,
 			);
-			path = Views;
 			sourceTree = "<group>";
 		};
-		436712FBC6FD40DE7FE1E034 /* BLE */ = {
+		8729AA77068382F4BE7AE875 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8951516EC2B845BA4194913D /* RingBluetoothManager.swift */,
-				0BCEDF1D8F47696FD2788D9C /* RingSyncEngine.swift */,
-			);
-			path = BLE;
-			sourceTree = "<group>";
-		};
-		6626D1E50509BEAD27DABF5F /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				33E92F744ABF219D48F2F4D2 /* Charts.swift */,
-				D3A39FDD073C94CC0894636F /* Components.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		71B6FF482B986799E916D014 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				4CDCE080100AF972260B30D0 /* SmartRingWatcher Watch App.app */,
+				EA143DA0C48116F825AFF912 /* SmartRingWatcher Watch App.app */,
+				9DF0A45ECE4E959812AC9DFC /* SmartRingWatcher Widget.appex */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		79734EB8AFC2CB125269ACD2 /* Metrics */ = {
-			isa = PBXGroup;
-			children = (
-				CD496D37D6FD0F3629B55AFA /* ActivityView.swift */,
-				10E171F6D98F502A12D23B3E /* HeartRateView.swift */,
-				4AE43D9DD24878115AA5FA04 /* SleepView.swift */,
-				07C2C46FDB070EB5CEEAC475 /* VitalsViews.swift */,
-			);
-			path = Metrics;
-			sourceTree = "<group>";
-		};
-		7C243D1ABE8E2BD136C7C0A5 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				EF175401BEB132A0748295CC /* SmartRingWatcherApp.swift */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		8A2934BF8E67675297A3835F = {
-			isa = PBXGroup;
-			children = (
-				A2E781C3AEB7C3C128EB0858 /* SmartRingWatcher Watch App */,
-				9342A0C319C559FD6607ECD9 /* RingProtocol */,
-				71B6FF482B986799E916D014 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		9342A0C319C559FD6607ECD9 /* RingProtocol */ = {
-			isa = PBXGroup;
-			children = (
-				D363F10B066C2F8BD830DB62 /* ByteReading.swift */,
-				FF02C7D18EB77C6D2106025D /* CRC16.swift */,
-				0484118E3164D7DA9E524610 /* HealthModels.swift */,
-				1ECD92AF6F253125669129B7 /* YCCommands.swift */,
-				5B3ACF55A2F8B5B7D4B48741 /* YCDataType.swift */,
-				56FB673934B15078BB06680E /* YCFrame.swift */,
-				9C5EA379147073E50B3065EB /* YCParsers.swift */,
-				73FFC7612A141FF38A610E45 /* YCProtocolSession.swift */,
-				4333B1503EB73CC5633BE1A1 /* YCTime.swift */,
-			);
-			path = RingProtocol;
-			sourceTree = "<group>";
-		};
-		99EA466736FB24B948B2496F /* Store */ = {
-			isa = PBXGroup;
-			children = (
-				17C966839152B9EAAB376F54 /* AppSettings.swift */,
-				6A6E90BA7AB4D394768C3B0D /* DemoDataGenerator.swift */,
-				9D2497D1A0C95A6A2F1ECB1F /* HealthDataStore.swift */,
-			);
-			path = Store;
-			sourceTree = "<group>";
-		};
-		A2E781C3AEB7C3C128EB0858 /* SmartRingWatcher Watch App */ = {
-			isa = PBXGroup;
-			children = (
-				7C243D1ABE8E2BD136C7C0A5 /* App */,
-				436712FBC6FD40DE7FE1E034 /* BLE */,
-				99EA466736FB24B948B2496F /* Store */,
-				14123EDEA8D2D04EE7C93524 /* Views */,
-				720A3AE71FE07DC9F3E36F49 /* Assets.xcassets */,
-				A0B6AC6C79FA44DE67BB9C68 /* Info.plist */,
-			);
-			path = "SmartRingWatcher Watch App";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B3D0B166BB5A73ACE618B40A /* SmartRingWatcher Watch App */ = {
+		8FF67FE97A59D14757C36C36 /* SmartRingWatcher Watch App */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FF064009BFBAE8E986428C4F /* Build configuration list for PBXNativeTarget "SmartRingWatcher Watch App" */;
+			buildConfigurationList = D1BB39AEB48976A56F3E6D0C /* Build configuration list for PBXNativeTarget "SmartRingWatcher Watch App" */;
 			buildPhases = (
-				C4D5163706E5908DC9E032F3 /* Sources */,
-				C18F88D444D8FE65E18D39E9 /* Frameworks */,
-				4FDAD6DB49035FA75C21467D /* Resources */,
+				F9B096411F88BC3B26009AA9 /* Sources */,
+				69131B2BD2BC41CD9484F95E /* Frameworks */,
+				81AC176AC3CCFDC5B031D09A /* Resources */,
+				FA993299C65EE6252CF5CA51 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F2D3A05ECD37F00C6F97203D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				EF004D0600C1AC389CDFA574 /* SmartRingWatcher Watch App */,
+				E23EDE435D7A15C46DF65BFF /* RingProtocol */,
+				44679FE8392600150CCEC8DE /* Shared */,
 			);
 			name = "SmartRingWatcher Watch App";
 			packageProductDependencies = (
 			);
 			productName = "SmartRingWatcher Watch App";
-			productReference = 4CDCE080100AF972260B30D0 /* SmartRingWatcher Watch App.app */;
+			productReference = EA143DA0C48116F825AFF912 /* SmartRingWatcher Watch App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		807DA29A9A2CFA681A2F1352 /* SmartRingWatcher Widget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8586E269B31139BC38461664 /* Build configuration list for PBXNativeTarget "SmartRingWatcher Widget" */;
+			buildPhases = (
+				95FEC48753B825536EB05A0B /* Sources */,
+				8AACD14D7E20F0CF7AD44D6D /* Frameworks */,
+				805AD5C1E8CFF162A228EAC3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				289CAF918B720288505F7B22 /* SmartRingWatcher Widget */,
+				44679FE8392600150CCEC8DE /* Shared */,
+			);
+			name = "SmartRingWatcher Widget";
+			packageProductDependencies = (
+			);
+			productName = "SmartRingWatcher Widget";
+			productReference = 9DF0A45ECE4E959812AC9DFC /* SmartRingWatcher Widget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+		4DD9AF86443E9788D89C4975 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
-					B3D0B166BB5A73ACE618B40A = {
+					8FF67FE97A59D14757C36C36 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					807DA29A9A2CFA681A2F1352 = {
 						CreatedOnToolsVersion = 16.0;
 					};
 				};
 			};
-			buildConfigurationList = A1806D8FE767B99D399E13F3 /* Build configuration list for PBXProject "SmartRingWatcher" */;
-			compatibilityVersion = "Xcode 14.0";
+			buildConfigurationList = BD1C63AF33280BE5F2B9931D /* Build configuration list for PBXProject "SmartRingWatcher" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = 8A2934BF8E67675297A3835F;
-			productRefGroup = 71B6FF482B986799E916D014 /* Products */;
+			mainGroup = C30640F7951AAC2F4FA13234;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 8729AA77068382F4BE7AE875 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B3D0B166BB5A73ACE618B40A /* SmartRingWatcher Watch App */,
+				8FF67FE97A59D14757C36C36 /* SmartRingWatcher Watch App */,
+				807DA29A9A2CFA681A2F1352 /* SmartRingWatcher Widget */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		4FDAD6DB49035FA75C21467D /* Resources */ = {
+		81AC176AC3CCFDC5B031D09A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				09125FCCE3A638735168AE94 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		805AD5C1E8CFF162A228EAC3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C4D5163706E5908DC9E032F3 /* Sources */ = {
+		F9B096411F88BC3B26009AA9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D852A3756B8A1CB772154E57 /* ByteReading.swift in Sources */,
-				A0103CE29DF3CACF3946DFC6 /* CRC16.swift in Sources */,
-				0F908940F1645730D4F227ED /* HealthModels.swift in Sources */,
-				2F0E9E3A1E56C6FFCD2744CF /* YCCommands.swift in Sources */,
-				B044CE8EBD3BFA30303010EE /* YCDataType.swift in Sources */,
-				76E61924782A53FDE026D973 /* YCFrame.swift in Sources */,
-				FF75499C4ABDBBC933464BC2 /* YCParsers.swift in Sources */,
-				E78F5930D631854637EF0811 /* YCProtocolSession.swift in Sources */,
-				6A3F1CCA1DAFF1FE6EFF7487 /* YCTime.swift in Sources */,
-				B115599915FA30EE95CE3101 /* SmartRingWatcherApp.swift in Sources */,
-				2EE1143A1FE11E2151E48F19 /* RingBluetoothManager.swift in Sources */,
-				4743A1261EB6972187D26254 /* RingSyncEngine.swift in Sources */,
-				B98C4403378D5A050743F4BE /* AppSettings.swift in Sources */,
-				612542651AA689F3A432B728 /* DemoDataGenerator.swift in Sources */,
-				0A2533E54F2FCB66733492AC /* HealthDataStore.swift in Sources */,
-				A2FB8FCA2AFBAED113ADE0B2 /* Charts.swift in Sources */,
-				20ADB29F4476E34C734ABBE3 /* Components.swift in Sources */,
-				46F51AED09FDCEA157D63DEF /* DeviceView.swift in Sources */,
-				CCE52DA8EA82006CD591F593 /* ActivityView.swift in Sources */,
-				D18455F35835BCC47D679002 /* HeartRateView.swift in Sources */,
-				6BC4FDA740B23CDB21804593 /* SleepView.swift in Sources */,
-				0B2F68945E7265DDF2222B3C /* VitalsViews.swift in Sources */,
-				87CF6E10619395EE33FF7A4F /* RootView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		95FEC48753B825536EB05A0B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin XCBuildConfiguration section */
-		41EC14BFA61A85B336E4F999 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "SmartRingWatcher Watch App/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = SmartRing;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.SmartRingWatcher.watchkitapp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
-			};
-			name = Debug;
+/* Begin PBXTargetDependency section */
+		F2D3A05ECD37F00C6F97203D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 807DA29A9A2CFA681A2F1352 /* SmartRingWatcher Widget */;
+			targetProxy = 72875DA3CD07BA5396A21EBD /* PBXContainerItemProxy */;
 		};
-		6AFE22E70BE079CBB63426F8 /* Release */ = {
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0FD23978195C99C14C3732B5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -321,43 +252,17 @@
 				GCC_NO_COMMON_BLOCKS = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				RING_APP_GROUP = "group.$(RING_BUNDLE_ID_PREFIX)";
+				RING_BUNDLE_ID_PREFIX = com.example.SmartRingWatcher;
 				SDKROOT = watchos;
 				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Release;
 		};
-		8668ED08E8535986A57FA16B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "SmartRingWatcher Watch App/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = SmartRing;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.SmartRingWatcher.watchkitapp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
-			};
-			name = Release;
-		};
-		D48F58F8CA231B2301441318 /* Debug */ = {
+		3307510454EEBDE421F6866F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -380,10 +285,124 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
+				RING_APP_GROUP = "group.$(RING_BUNDLE_ID_PREFIX)";
+				RING_BUNDLE_ID_PREFIX = com.example.SmartRingWatcher;
 				SDKROOT = watchos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		8132E4AE3C0947D193BD5962 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "SmartRingWatcher Widget/SmartRingWatcher Widget.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7RLDYXQTNX;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SmartRingWatcher Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = SmartRing;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(RING_BUNDLE_ID_PREFIX).watchkitapp.widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		C4BDD8ADDAE59BDC7C4ED455 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "SmartRingWatcher Widget/SmartRingWatcher Widget.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7RLDYXQTNX;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SmartRingWatcher Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = SmartRing;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(RING_BUNDLE_ID_PREFIX).watchkitapp.widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		E0663D122ED458CD9A74CB9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "SmartRingWatcher Watch App/SmartRingWatcher.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7RLDYXQTNX;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SmartRingWatcher Watch App/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = SmartRing;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(RING_BUNDLE_ID_PREFIX).watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		F350ADA50AC3AAF20273A4FA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "SmartRingWatcher Watch App/SmartRingWatcher.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7RLDYXQTNX;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SmartRingWatcher Watch App/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = SmartRing;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(RING_BUNDLE_ID_PREFIX).watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Debug;
@@ -391,25 +410,34 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1806D8FE767B99D399E13F3 /* Build configuration list for PBXProject "SmartRingWatcher" */ = {
+		BD1C63AF33280BE5F2B9931D /* Build configuration list for PBXProject "SmartRingWatcher" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D48F58F8CA231B2301441318 /* Debug */,
-				6AFE22E70BE079CBB63426F8 /* Release */,
+				3307510454EEBDE421F6866F /* Debug */,
+				0FD23978195C99C14C3732B5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FF064009BFBAE8E986428C4F /* Build configuration list for PBXNativeTarget "SmartRingWatcher Watch App" */ = {
+		D1BB39AEB48976A56F3E6D0C /* Build configuration list for PBXNativeTarget "SmartRingWatcher Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				41EC14BFA61A85B336E4F999 /* Debug */,
-				8668ED08E8535986A57FA16B /* Release */,
+				F350ADA50AC3AAF20273A4FA /* Debug */,
+				E0663D122ED458CD9A74CB9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8586E269B31139BC38461664 /* Build configuration list for PBXNativeTarget "SmartRingWatcher Widget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C4BDD8ADDAE59BDC7C4ED455 /* Debug */,
+				8132E4AE3C0947D193BD5962 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+	rootObject = 4DD9AF86443E9788D89C4975 /* Project object */;
 }

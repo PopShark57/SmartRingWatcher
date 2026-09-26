@@ -1,5 +1,5 @@
 import Foundation
-@testable import RingProtocol
+@testable import RingCore
 
 /// "05 04 06 00" → [0x05, 0x04, 0x06, 0x00]. Spaces are ignored.
 func hex(_ string: String) -> [UInt8] {

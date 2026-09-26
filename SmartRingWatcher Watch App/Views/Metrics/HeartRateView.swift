@@ -1,22 +1,25 @@
 import SwiftUI
 
 struct HeartRateView: View {
-    @EnvironmentObject private var store: HealthDataStore
-
-    private var day: [HeartRateSample] { store.last24h(store.heartRate) }
+    @Environment(HealthDataStore.self) private var store
 
     var body: some View {
+        let day = store.heartRateDay
         ScrollView {
             VStack(spacing: 12) {
                 if let latest = store.latestHeartRate {
-                    HeroValue(style: .heartRate, value: "\(latest.value)", unit: "BPM",
-                              date: latest.date, caption: zone(for: latest.value))
+                    // No "low/elevated" label: without knowing whether you were resting,
+                    // exercising or asleep, a classification would often be wrong.
+                    HeroValue(style: .heartRate, value: "\(latest.value)", unit: "BPM", date: latest.date)
                 } else {
                     NoDataView(style: .heartRate)
                 }
 
                 if !day.isEmpty {
-                    TrendChart(points: day.chartPoints, color: MetricStyle.heartRate.color)
+                    ChartHeader(title: "Last 24 hours", unit: "BPM")
+                    TrendChart(points: day.chartPoints, color: MetricStyle.heartRate.color,
+                               accessibilityName: String(localized: "Heart rate, last 24 hours"), unit: "BPM",
+                               showsArea: true)
                     let values = day.map(\.bpm)
                     StatRow(items: [
                         .init(label: "Min", value: "\(values.min() ?? 0)"),
@@ -30,40 +33,39 @@ struct HeartRateView: View {
                 }
                 DetailRow(label: "Readings, 24 h", value: "\(day.count)")
 
-                MeasureButton(kind: .heartRate)
+                MeasureButton(kind: .heartRate,
+                              latest: store.latestHeartRate.map { Reading(value: "\($0.value) BPM", date: $0.date) })
+
+                Text("Resting is estimated from awake periods without walking; sleep is left out because it runs lower.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 4)
         }
         .navigationTitle("Heart Rate")
-    }
-
-    private func zone(for bpm: Int) -> String {
-        switch bpm {
-        case ..<60: return "Low"
-        case ..<100: return "Normal"
-        case ..<130: return "Elevated"
-        default: return "High"
-        }
+        .metricPage(.heartRate)
     }
 }
 
 struct HRVView: View {
-    @EnvironmentObject private var store: HealthDataStore
-
-    private var day: [HRVSample] { store.last24h(store.hrv) }
+    @Environment(HealthDataStore.self) private var store
 
     var body: some View {
+        let day = store.hrvDay
+        let kindName = store.hrvKind?.displayName ?? "HRV"
         ScrollView {
             VStack(spacing: 12) {
                 if let latest = store.latestHRV {
-                    HeroValue(style: .hrv, value: latest.value.noDecimals, unit: "ms", date: latest.date)
+                    HeroValue(style: .hrv, value: latest.value.noDecimals, unit: "ms", date: latest.date, caption: kindName)
                 } else {
                     NoDataView(style: .hrv)
                 }
 
                 if !day.isEmpty {
+                    ChartHeader(title: "\(kindName), last 24 hours", unit: "ms")
                     TrendChart(points: day.map { ChartPoint(date: $0.date, value: $0.milliseconds) },
-                               color: MetricStyle.hrv.color)
+                               color: MetricStyle.hrv.color,
+                               accessibilityName: String(localized: "\(kindName), last 24 hours"), unit: "ms")
                     let values = day.map(\.milliseconds)
                     StatRow(items: [
                         .init(label: "Min", value: (values.min() ?? 0).noDecimals),
@@ -82,12 +84,13 @@ struct HRVView: View {
                     }
                 }
 
-                Text("Higher HRV generally indicates better recovery. Compare against your own baseline.")
+                Text("Higher HRV generally indicates better recovery. Compare against your own baseline. RMSSD and SDNN are different measures, so this page charts only one: \(kindName).")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 4)
         }
         .navigationTitle("HRV")
+        .metricPage(.hrv)
     }
 }

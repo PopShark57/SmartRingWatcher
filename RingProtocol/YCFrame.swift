@@ -8,7 +8,7 @@ import Foundation
 /// ```
 /// `totalLength` counts every byte including the 4-byte header and the 2-byte CRC,
 /// and the CRC-16/CCITT-FALSE covers everything before it.
-struct YCFrame: Equatable, CustomStringConvertible {
+struct YCFrame: Equatable, CustomStringConvertible, Sendable {
     static let overhead = 6
 
     let dataType: YCDataType

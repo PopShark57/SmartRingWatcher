@@ -8,10 +8,16 @@
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>SmartRing connects to your smart ring over Bluetooth to read heart rate, sleep, steps, blood pressure, blood oxygen and other health data.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>SmartRing saves your ring's heart rate, HRV, blood oxygen, respiration, blood pressure, steps and sleep to Apple Health when you turn this on in Settings.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>SmartRing only writes ring data to Apple Health; it doesn't read your health data.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>
 	</array>
+	<key>RingAppGroup</key>
+	<string>$(RING_APP_GROUP)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

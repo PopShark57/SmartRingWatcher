@@ -1,8 +1,14 @@
 import Foundation
 
 /// Anything with a timestamp that the store can merge and de-duplicate.
-protocol TimedSample: Codable, Hashable {
+protocol TimedSample: Codable, Hashable, Sendable {
     var date: Date { get }
+    /// Samples with the same key are the same reading; the newest copy wins when merging.
+    var mergeKey: Int { get }
+}
+
+extension TimedSample {
+    var mergeKey: Int { Int(date.timeIntervalSince1970) }
 }
 
 struct HeartRateSample: TimedSample {
@@ -27,10 +33,45 @@ struct TemperatureSample: TimedSample {
     var celsius: Double
 }
 
+/// What an HRV value measures. RMSSD and SDNN are different statistics and are never mixed
+/// in one chart; the ring's own "HRV" byte has no published definition.
+enum HRVKind: String, Codable, CaseIterable, Sendable {
+    /// Root mean square of successive RR differences (short-term, parasympathetic).
+    case rmssd
+    /// Standard deviation of RR intervals (what HealthKit's HRV type stores).
+    case sdnn
+    /// The ring's own HRV byte (`0x0509` history, `0x0603` upload); definition unknown.
+    case vendor
+
+    var displayName: String {
+        switch self {
+        case .rmssd: return "RMSSD"
+        case .sdnn: return "SDNN"
+        case .vendor: return "HRV (ring)"
+        }
+    }
+}
+
 struct HRVSample: TimedSample {
     var date: Date
-    /// Heart-rate variability as reported by the ring (milliseconds).
+    /// Heart-rate variability in milliseconds.
     var milliseconds: Double
+    var kind: HRVKind = .vendor
+
+    /// One reading per kind per second: an RMSSD and an SDNN taken at the same time are both kept.
+    var mergeKey: Int { Int(date.timeIntervalSince1970) &* 4 &+ (HRVKind.allCases.firstIndex(of: kind) ?? 0) }
+}
+
+extension HRVSample {
+    private enum CodingKeys: String, CodingKey { case date, milliseconds, kind }
+
+    /// Caches written before HRV kinds existed have no `kind`; they decode as `.vendor`.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        date = try c.decode(Date.self, forKey: .date)
+        milliseconds = try c.decode(Double.self, forKey: .milliseconds)
+        kind = try c.decodeIfPresent(HRVKind.self, forKey: .kind) ?? .vendor
+    }
 }
 
 struct RespirationSample: TimedSample {
@@ -70,6 +111,11 @@ struct BodyMetricsSample: TimedSample {
     var hrvMilliseconds: Double? {
         (rmssd ?? sdnn).map { Double($0) }
     }
+
+    /// Which statistic `hrvMilliseconds` is.
+    var hrvKind: HRVKind? {
+        rmssd != nil ? .rmssd : (sdnn != nil ? .sdnn : nil)
+    }
 }
 
 /// Steps, distance and energy for one interval (history records cover minutes to an hour).
@@ -97,7 +143,7 @@ struct MetabolicSample: TimedSample {
     var triglycerides: Double?
 }
 
-enum SleepStageKind: Int, Codable, CaseIterable {
+enum SleepStageKind: Int, Codable, CaseIterable, Sendable {
     case deep = 241
     case light = 242
     case rem = 243
@@ -106,16 +152,16 @@ enum SleepStageKind: Int, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .deep: return "Deep"
-        case .light: return "Light"
-        case .rem: return "REM"
-        case .awake: return "Awake"
-        case .nap: return "Nap"
+        case .deep: return String(localized: "Deep")
+        case .light: return String(localized: "Light")
+        case .rem: return String(localized: "REM")
+        case .awake: return String(localized: "Awake")
+        case .nap: return String(localized: "Nap")
         }
     }
 }
 
-struct SleepStage: Codable, Hashable {
+struct SleepStage: Codable, Hashable, Sendable {
     var start: Date
     var duration: TimeInterval
     var kind: SleepStageKind
@@ -160,7 +206,7 @@ struct SleepSession: TimedSample {
     }
 }
 
-struct DeviceInfo: Codable, Hashable {
+struct DeviceInfo: Codable, Hashable, Sendable {
     var deviceID: Int
     var firmwareVersion: String
     var batteryPercent: Int
@@ -170,7 +216,7 @@ struct DeviceInfo: Codable, Hashable {
 }
 
 /// The latest live values, from `getAllRealData`, real-time uploads and measurement results.
-struct LiveSnapshot: Codable, Hashable {
+struct LiveSnapshot: Codable, Hashable, Sendable {
     var updatedAt: Date?
     var heartRate: Int?
     var systolic: Int?
@@ -180,6 +226,8 @@ struct LiveSnapshot: Codable, Hashable {
     var temperature: Double?
     /// Heart-rate variability in milliseconds.
     var hrv: Double?
+    /// What `hrv` measures.
+    var hrvKind: HRVKind?
     /// Stress index, 0–10 (see `BodyMetricsSample.stress`).
     var stress: Double?
     var stepsToday: Int?
@@ -190,7 +238,7 @@ struct LiveSnapshot: Codable, Hashable {
 }
 
 /// A bag of decoded samples; every parser returns one so the store merges them uniformly.
-struct HealthBatch: Equatable {
+struct HealthBatch: Equatable, Sendable {
     var heartRate: [HeartRateSample] = []
     var bloodPressure: [BloodPressureSample] = []
     var bloodOxygen: [BloodOxygenSample] = []
