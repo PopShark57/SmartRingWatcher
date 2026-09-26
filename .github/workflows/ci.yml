@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Unit tests (protocol, store, sync engine)
+        run: swift test
+
+      - name: Build the watch app and widget for the watchOS Simulator
+        run: |
+          xcodebuild build \
+            -project SmartRingWatcher.xcodeproj \
+            -scheme "SmartRingWatcher Watch App" \
+            -destination "generic/platform=watchOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO

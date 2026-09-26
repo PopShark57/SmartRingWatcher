@@ -1,5 +1,5 @@
 import XCTest
-@testable import RingProtocol
+@testable import RingCore
 
 final class SessionTests: XCTestCase {
 
@@ -24,7 +24,8 @@ final class SessionTests: XCTestCase {
         XCTAssertEqual(out.replies, [YCCommand.historyTransferOK])
         var expected = HealthBatch()
         expected.heartRate = [HeartRateSample(date: baseDate, bpm: 72)]
-        XCTAssertEqual(out.events, [.samples(expected), .completed(.historyHeart, success: true)])
+        XCTAssertEqual(out.events, [.samples(expected), .historyReceived(.historyHeart, bytes: 12, records: 1),
+                                    .completed(.historyHeart, .success)])
     }
 
     func testHistoryTransferWithBadCRCAsksForRetry() {
@@ -33,20 +34,26 @@ final class SessionTests: XCTestCase {
         _ = session.receive(YCFrame(YCDataType(group: 0x05, key: 0x15), Vectors.heart).data)
         let out = session.receive(YCFrame(.historyBlock, hex("0100 0C00 0000")).data)
         XCTAssertEqual(out.replies, [YCCommand.historyTransferFailed])
-        XCTAssertEqual(out.events, [.completed(.historyHeart, success: false)])
+        XCTAssertEqual(out.events, [.completed(.historyHeart, .failed)])
     }
 
     func testEmptyHistoryCompletesImmediately() {
         let session = makeSession()
         let out = session.receive(YCFrame(.historySleep, [0x00, 0x00]).data)
-        XCTAssertEqual(out.events, [.completed(.historySleep, success: true)])
+        XCTAssertEqual(out.events, [.completed(.historySleep, .success)])
         XCTAssertFalse(session.isReceivingHistory)
     }
 
-    func testUnsupportedCommandCompletesWithFailure() {
+    func testUnsupportedCommandCompletesAsUnsupported() {
         let session = makeSession()
-        let out = session.receive(YCFrame(.historyBody, [0xFC]).data)
-        XCTAssertEqual(out.events, [.completed(.historyBody, success: false)])
+        XCTAssertEqual(session.receive(YCFrame(.historyBody, [0xFC]).data).events, [.completed(.historyBody, .unsupported)])
+        XCTAssertEqual(session.receive(YCFrame(.historySleep, [0xFB]).data).events, [.completed(.historySleep, .unsupported)])
+    }
+
+    /// Length and CRC error replies are transient: retried rather than treated as unsupported.
+    func testLengthOrCRCErrorReplyIsATransientFailure() {
+        let session = makeSession()
+        XCTAssertEqual(session.receive(YCFrame(.historyHeart, [0xFD]).data).events, [.completed(.historyHeart, .failed)])
     }
 
     func testDeviceEventsAreAcknowledged() {
@@ -76,7 +83,7 @@ final class SessionTests: XCTestCase {
         let out = session.receive(YCFrame(.getDeviceInfo, hex("3412 05 01 01 32 01 00")).data)
         XCTAssertEqual(out.events.first, .deviceInfo(DeviceInfo(deviceID: 0x1234, firmwareVersion: "1.05",
                                                                 batteryPercent: 50, batteryState: 1)))
-        XCTAssertEqual(out.events.last, .completed(.getDeviceInfo, success: true))
+        XCTAssertEqual(out.events.last, .completed(.getDeviceInfo, .success))
     }
 
     func testZeroHeartRateIsNotReported() {

@@ -1,5 +1,5 @@
 import XCTest
-@testable import RingProtocol
+@testable import RingCore
 
 /// Each expectation mirrors what the vendor SDK decoded from the same bytes
 /// (see `Vectors`), minus values the app deliberately filters out (zeros).
@@ -29,7 +29,7 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(batch.bloodPressure, [BloodPressureSample(date: baseDate, systolic: 118, diastolic: 76, heartRate: 65)])
         XCTAssertEqual(batch.bloodOxygen, [BloodOxygenSample(date: baseDate, percent: 98)])
         XCTAssertEqual(batch.respiration, [RespirationSample(date: baseDate, breathsPerMinute: 16)])
-        XCTAssertEqual(batch.hrv, [HRVSample(date: baseDate, milliseconds: 45)])
+        XCTAssertEqual(batch.hrv, [HRVSample(date: baseDate, milliseconds: 45, kind: .vendor)])
         XCTAssertEqual(batch.temperature.first?.celsius ?? 0, 36.5, accuracy: 0.0001)
     }
 
@@ -82,7 +82,7 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(body.hf, 400)
         XCTAssertEqual(body.lfHfRatio ?? 0, 1.2, accuracy: 0.0001)
         // The HRV series gets RMSSD in ms, never the 0–10 HRV index.
-        XCTAssertEqual(batch.hrv, [HRVSample(date: baseDate, milliseconds: 35)])
+        XCTAssertEqual(batch.hrv, [HRVSample(date: baseDate, milliseconds: 35, kind: .rmssd)])
     }
 
     func testBodyIndicesRejectOutOfRangeAndReadNegativeBalance() throws {
@@ -104,6 +104,7 @@ final class ParserTests: XCTestCase {
             return XCTFail("expected a pushed live event, got \(events)")
         }
         XCTAssertEqual(snapshot.hrv, 35)
+        XCTAssertEqual(snapshot.hrvKind, .rmssd)
         XCTAssertEqual(snapshot.stress ?? 0, 5.5, accuracy: 0.0001)
     }
 

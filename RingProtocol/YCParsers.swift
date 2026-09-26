@@ -165,7 +165,7 @@ enum YCParsers {
                 batch.respiration.append(RespirationSample(date: date, breathsPerMinute: resp))
             }
             if let hrv = Plausible.hrv(Double(b.u8(i + 11))) {
-                batch.hrv.append(HRVSample(date: date, milliseconds: hrv))
+                batch.hrv.append(HRVSample(date: date, milliseconds: hrv, kind: .vendor))
             }
             if b.u8(i + 13) > 0, let temp = Plausible.temperature(vendorDecimal(integer: b.u8(i + 13), fraction: b.u8(i + 14))) {
                 batch.temperature.append(TemperatureSample(date: date, celsius: temp))
@@ -242,8 +242,8 @@ enum YCParsers {
             if let sample {
                 batch.bodyMetrics.append(sample)
                 // The record's "HRV" field is an inverted 0–10 index; RMSSD/SDNN are the real HRV.
-                if let ms = sample.hrvMilliseconds.flatMap(Plausible.hrv) {
-                    batch.hrv.append(HRVSample(date: date, milliseconds: ms))
+                if let ms = sample.hrvMilliseconds.flatMap(Plausible.hrv), let kind = sample.hrvKind {
+                    batch.hrv.append(HRVSample(date: date, milliseconds: ms, kind: kind))
                 }
             }
             i += 28
@@ -333,7 +333,10 @@ enum YCParsers {
         s.systolic = Plausible.systolic(b.u8(0))
         s.diastolic = Plausible.diastolic(b.u8(1))
         s.heartRate = Plausible.heartRate(b.u8(2))
-        if b.count > 3 { s.hrv = Plausible.hrv(Double(b.u8(3))) }
+        if b.count > 3, let hrv = Plausible.hrv(Double(b.u8(3))) {
+            s.hrv = hrv
+            s.hrvKind = .vendor
+        }
         if b.count > 4 { s.bloodOxygen = Plausible.bloodOxygen(b.u8(4)) }
         if b.count > 6, b.u8(5) > 0 {
             s.temperature = Plausible.temperature(vendorDecimal(integer: b.u8(5), fraction: b.u8(6)))
@@ -399,7 +402,8 @@ enum YCParsers {
         return (bpm, rr)
     }
 
-    /// RMSSD in milliseconds from successive RR intervals (seconds).
+    /// RMSSD in milliseconds from successive RR intervals (seconds). Needs a long enough
+    /// window to mean anything; see `RRIntervalWindow`.
     static func rmssd(_ rrIntervals: [Double]) -> Double? {
         guard rrIntervals.count >= 2 else { return nil }
         var sum = 0.0
@@ -421,7 +425,10 @@ extension LiveSnapshot {
         bloodOxygen = patch.bloodOxygen ?? bloodOxygen
         respiratoryRate = patch.respiratoryRate ?? respiratoryRate
         temperature = patch.temperature ?? temperature
-        hrv = patch.hrv ?? hrv
+        if let value = patch.hrv {
+            hrv = value
+            hrvKind = patch.hrvKind
+        }
         stress = patch.stress ?? stress
         stepsToday = patch.stepsToday ?? stepsToday
         distanceTodayMeters = patch.distanceTodayMeters ?? distanceTodayMeters

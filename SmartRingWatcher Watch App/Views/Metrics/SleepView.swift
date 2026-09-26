@@ -1,14 +1,14 @@
 import SwiftUI
 
 struct SleepView: View {
-    @EnvironmentObject private var store: HealthDataStore
+    @Environment(HealthDataStore.self) private var store
 
     var body: some View {
         ScrollView {
             VStack(spacing: 12) {
                 if let night = store.lastNightSleep {
                     HeroValue(style: .sleep, value: night.asleepSeconds.hoursMinutes,
-                              caption: "Score \(night.estimatedScore) (est.)")
+                              caption: String(localized: "Score \(night.estimatedScore) (est.)"))
                     Text("\(night.date.formatted(date: .omitted, time: .shortened)) – \(night.end.formatted(date: .omitted, time: .shortened))")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -26,12 +26,12 @@ struct SleepView: View {
                         DetailRow(label: "In bed", value: night.inBedSeconds.hoursMinutes)
                     }
 
-                    if weekly.count > 1 {
-                        Text("Last 7 nights")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        BarTrendChart(bars: weekly, color: MetricStyle.sleep.color, unit: .day)
+                    if store.weeklySleep.filter({ $0.value > 0 }).count > 1 {
+                        ChartHeader(title: "Last 7 nights", unit: String(localized: "hours"))
+                        BarTrendChart(bars: store.weeklySleep, color: MetricStyle.sleep.color, unit: .day,
+                                      accessibilityName: String(localized: "Sleep, last 7 nights"),
+                                      valueUnit: String(localized: "hours"), targetBand: 7...9,
+                                      valueFormat: { $0.oneDecimal })
                     }
                 } else {
                     NoDataView(style: .sleep, message: "No sleep recorded yet. Wear the ring overnight; sleep syncs in the morning.")
@@ -40,17 +40,7 @@ struct SleepView: View {
             .padding(.horizontal, 4)
         }
         .navigationTitle("Sleep")
-    }
-
-    /// Hours asleep per night, keyed by the day the night ended.
-    private var weekly: [BarTrendChart.Bar] {
-        let calendar = Calendar.current
-        let start = calendar.date(byAdding: .day, value: -7, to: Date()) ?? .distantPast
-        var byDay: [Date: Double] = [:]
-        for session in store.sleep where session.end >= start {
-            byDay[calendar.startOfDay(for: session.end), default: 0] += session.asleepSeconds / 3600
-        }
-        return byDay.map { BarTrendChart.Bar(date: $0.key, value: $0.value) }.sorted { $0.date < $1.date }
+        .metricPage(.sleep)
     }
 
     private func stageRow(_ kind: SleepStageKind, _ seconds: TimeInterval, of night: SleepSession) -> some View {
@@ -64,11 +54,12 @@ struct SleepView: View {
             Spacer()
             Text(seconds.hoursMinutes)
                 .monospacedDigit()
-            Text("\(Int((seconds / total * 100).rounded()))%")
+            Text((seconds / total).formatted(.percent.precision(.fractionLength(0))))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
-                .frame(width: 34, alignment: .trailing)
+                .frame(minWidth: 34, alignment: .trailing)
         }
         .font(.footnote)
+        .accessibilityElement(children: .combine)
     }
 }

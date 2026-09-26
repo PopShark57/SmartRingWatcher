@@ -1,5 +1,5 @@
 import XCTest
-@testable import RingProtocol
+@testable import RingCore
 
 final class FrameTests: XCTestCase {
 
